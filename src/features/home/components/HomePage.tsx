@@ -1,6 +1,6 @@
 // app/(tabs)/index.tsx
-import { ThemedText } from "@/components/themed/ThemedText";
-import { useThemeColor } from "@/hooks/useThemeColors";
+import { useThemeColor } from "@/src/hooks/useThemeColors";
+import { ThemedText } from "@/src/themed/ThemedText";
 import { Href, useRouter } from "expo-router";
 import { Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,15 +17,12 @@ export default function HomePage() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.primary }]}
+      style={[styles.container, { backgroundColor: colors.backgroundAccentCO }]}
     >
       <View style={styles.centerContent}>
         {/* Logo */}
         <View style={styles.logo}>
-          <ThemedText
-            style={{ color: colors.buttonPrimaryText }}
-            variant="title"
-          >
+          <ThemedText style={{ color: colors.textInverse }} variant="title">
             FoodHub
           </ThemedText>
         </View>
@@ -35,14 +32,17 @@ export default function HomePage() {
           <TouchableOpacity
             style={[
               styles.button,
-              { backgroundColor: colors.buttonPrimaryText },
+              { backgroundColor: colors.backgroundPrimary },
             ]}
             activeOpacity={0.8}
             onPress={() => {
               handlers.navigate("/(manager)");
             }}
           >
-            <ThemedText variant="subtitle" style={{ color: colors.primary }}>
+            <ThemedText
+              variant="subtitle"
+              style={{ color: colors.textNegative }}
+            >
               Manage Menu
             </ThemedText>
           </TouchableOpacity>
@@ -50,14 +50,17 @@ export default function HomePage() {
           <TouchableOpacity
             style={[
               styles.button,
-              { backgroundColor: colors.buttonPrimaryText },
+              { backgroundColor: colors.backgroundPrimary },
             ]}
             activeOpacity={0.8}
             onPress={() => {
               handlers.navigate("/menu");
             }}
           >
-            <ThemedText variant="subtitle" style={{ color: colors.primary }}>
+            <ThemedText
+              variant="subtitle"
+              style={{ color: colors.textNegative }}
+            >
               View Menu
             </ThemedText>
           </TouchableOpacity>

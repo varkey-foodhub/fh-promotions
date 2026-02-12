@@ -1,17 +1,8 @@
+import MenuHomePage from "@/src/features/menu/components/MenuPage";
 import React from "react";
-import { StyleSheet, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
-type Props = {};
-
-const MenuHomeScreen = (props: Props) => {
-  return (
-    <SafeAreaView>
-      <Text>MenuHomeScreen</Text>
-    </SafeAreaView>
-  );
+const MenuHomeScreen = () => {
+  return <MenuHomePage />;
 };
 
 export default MenuHomeScreen;
-
-const styles = StyleSheet.create({});
