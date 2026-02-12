@@ -54,7 +54,7 @@ export default function HomePage() {
             ]}
             activeOpacity={0.8}
             onPress={() => {
-              handlers.navigate("/(menu)");
+              handlers.navigate("/menu");
             }}
           >
             <ThemedText variant="subtitle" style={{ color: colors.primary }}>

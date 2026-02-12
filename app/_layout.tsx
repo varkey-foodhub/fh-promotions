@@ -1,7 +1,6 @@
 import { Stack } from "expo-router";
 import "react-native-reanimated";
 
-
 export const unstable_settings = {
   anchor: "(tabs)",
 };
@@ -11,7 +10,7 @@ export default function RootLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(manager)" options={{ headerShown: false }} />
-      <Stack.Screen name="(menu)" options={{ headerShown: false }} />
+      <Stack.Screen name="menu" options={{ headerShown: false }} />
     </Stack>
   );
 }
