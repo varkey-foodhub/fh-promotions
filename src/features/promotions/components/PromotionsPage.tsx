@@ -93,10 +93,6 @@ const PromotionsPage = () => {
     statusFilter === null || statusFilter === "EXPIRED";
 
   // --- Handlers ---
-  const handleDelete = (id: number) => {
-    deleteMutation.mutate(id);
-    console.log("Delete", id);
-  };
 
   const handleToggle = (id: number, val: boolean) => {
     // Implement toggle mutation here
@@ -107,6 +103,13 @@ const PromotionsPage = () => {
     navigateBack: () => {
       router.dismissAll();
       router.replace("/");
+    },
+    navigateToCreatePromotions: () => {
+      router.navigate("/(manager)/createPromotion");
+    },
+    handleDelete: (id: number) => {
+      deleteMutation.mutate(id);
+      console.log("Delete", id);
     },
   };
 
@@ -149,6 +152,7 @@ const PromotionsPage = () => {
                 styles.createButton,
                 { backgroundColor: colors.actionPrimary },
               ]}
+              onPress={handler.navigateToCreatePromotions}
             >
               <ThemedText
                 variant="subtitle"
@@ -205,7 +209,7 @@ const PromotionsPage = () => {
                 <PromotionCard
                   key={item.id}
                   item={item}
-                  onDelete={handleDelete}
+                  onDelete={handler.handleDelete}
                   onToggleActive={handleToggle}
                 />
               ))}
@@ -233,7 +237,7 @@ const PromotionsPage = () => {
                 <PromotionCard
                   key={item.id}
                   item={item}
-                  onDelete={handleDelete}
+                  onDelete={handler.handleDelete}
                   onToggleActive={handleToggle}
                 />
               ))}
