@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  createPromotion,
   deletePromotion,
   fetchActivePromotions,
   fetchExpiredPromotions,
@@ -82,6 +83,63 @@ export const useDeletePromotion = () => {
     },
 
     // 🔄 Refetch after success
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+  });
+};
+
+export const useCreatePromotion = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createPromotion,
+
+    onMutate: async (newPromotion: any) => {
+      await queryClient.cancelQueries({ queryKey: ["promotions"] });
+
+      const previousActive = queryClient.getQueryData(["promotions", "active"]);
+
+      // Create temporary optimistic item
+      const optimisticPromotion = {
+        ...newPromotion,
+        id: Date.now(), // temp id
+        __optimistic: true,
+      };
+
+      // Only add to active if it should be active
+      const isActive =
+        optimisticPromotion.active &&
+        new Date(optimisticPromotion.valid_from) <= new Date() &&
+        new Date(optimisticPromotion.valid_to) >= new Date();
+
+      if (isActive) {
+        queryClient.setQueryData(["promotions", "active"], (old: any) => {
+          if (!old?.data) return old;
+          return {
+            ...old,
+            data: [optimisticPromotion, ...old.data],
+          };
+        });
+      }
+
+      return { previousActive };
+    },
+
+    onError: (_err, _newPromotion, context: any) => {
+      if (context?.previousActive) {
+        queryClient.setQueryData(
+          ["promotions", "active"],
+          context.previousActive,
+        );
+      }
+    },
+
+    onSuccess: () => {
+      // Replace optimistic data with real backend data
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["promotions"] });
     },

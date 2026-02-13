@@ -59,12 +59,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="createPromotion"
-        options={{
-          href: null, // 🔥 THIS hides it from tab bar
-        }}
-      />
     </Tabs>
   );
 }
