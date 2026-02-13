@@ -8,6 +8,7 @@ export interface Promotion {
   active: boolean;
   valid_from: string;
   valid_to: string;
+  application_method: "CODE" | "DISCOUNT";
 }
 
 export interface ActivePromotionsResponse {

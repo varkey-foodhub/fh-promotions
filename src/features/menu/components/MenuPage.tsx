@@ -20,6 +20,11 @@ const MenuHomePage = () => {
   const router = useRouter();
   const { data, isLoading, error } = useMenu();
 
+  const handler = {
+    navigateToHome: () => {
+      router.replace("/");
+    },
+  };
   if (isLoading)
     return (
       <SafeAreaView style={styles.center}>
@@ -45,7 +50,7 @@ const MenuHomePage = () => {
       <View
         style={[styles.header, { backgroundColor: colors.backgroundSecondary }]}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={handler.navigateToHome}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 

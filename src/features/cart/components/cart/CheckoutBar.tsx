@@ -1,0 +1,82 @@
+import { useThemeColor } from "@/src/hooks/useThemeColors";
+import { useCartStore } from "@/src/store/cart.store";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { usePlaceOrder } from "../../cart.query";
+const CheckoutBar = () => {
+  const colors = useThemeColor();
+  const total = useCartStore((s) => s.total);
+  const { mutate, isPending } = usePlaceOrder();
+  const cart = useCartStore();
+
+  const handleCheckout = () => {
+    mutate({
+      items: cart.items.map((i) => ({
+        id: i.id,
+        quantity: i.quantity,
+      })),
+      promotion_id: cart.appliedPromotion?.id ?? null,
+    });
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.actionPrimary }]}>
+      <View>
+        <Text style={styles.totalText}>₹{total}</Text>
+        <Text style={styles.subLabel}>Final amount may change</Text>
+      </View>
+
+      <TouchableOpacity style={styles.button} onPress={handleCheckout}>
+        <Text style={[styles.checkout, { color: colors.actionPrimary }]}>
+          Checkout
+        </Text>
+        <Ionicons
+          name="chevron-forward-outline"
+          style={[styles.checkout, { color: colors.actionPrimary }]}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+export default CheckoutBar;
+
+const styles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    bottom: 20,
+    left: 16,
+    right: 16,
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    elevation: 10,
+  },
+  totalText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  subLabel: {
+    color: "white",
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  checkout: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  button: {
+    flexDirection: "row",
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
+    borderRadius: 4,
+    gap: 4,
+  },
+});
