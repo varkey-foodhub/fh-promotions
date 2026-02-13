@@ -50,18 +50,28 @@ export const useCartStore = create<CartState>()(
 
         const totalItems = items.reduce((acc, i) => acc + i.quantity, 0);
 
-        const subtotal = items.reduce(
+        // ✅ Force 2 decimal precision
+        const subtotalRaw = items.reduce(
           (acc, i) => acc + i.quantity * i.price,
           0,
         );
+
+        const subtotal = Number(subtotalRaw.toFixed(2));
+
         if (subtotal === 0) {
-          set({ appliedPromotion: null, discountAmount: 0, total: 0 });
+          set({
+            appliedPromotion: null,
+            discountAmount: 0,
+            totalItems,
+            subtotal: 0,
+            total: 0,
+          });
           return;
         }
 
         let discountAmount = 0;
 
-        if (appliedPromotion && subtotal > 0) {
+        if (appliedPromotion) {
           if (
             appliedPromotion.type === "PERCENTAGE" &&
             appliedPromotion.percent_off
@@ -77,9 +87,11 @@ export const useCartStore = create<CartState>()(
           }
         }
 
+        // ✅ Clamp + round
         discountAmount = Math.min(discountAmount, subtotal);
+        discountAmount = Number(discountAmount.toFixed(2));
 
-        const total = subtotal - discountAmount;
+        const total = Number((subtotal - discountAmount).toFixed(2));
 
         set({
           totalItems,
