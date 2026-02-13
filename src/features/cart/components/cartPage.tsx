@@ -91,38 +91,43 @@ const CartPage = () => {
           )}
         </View>
 
-        {/* SECTION 2: Promotions */}
-        <View
-          style={[
-            styles.whiteBox,
-            { backgroundColor: colors.backgroundElevated },
-          ]}
-        >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Promotions
-          </Text>
-          <Promotions />
-        </View>
+        {items.length !== 0 && (
+          <>
+            <View
+              style={[
+                styles.whiteBox,
+                { backgroundColor: colors.backgroundElevated },
+              ]}
+            >
+              <Text
+                style={[styles.sectionTitle, { color: colors.textPrimary }]}
+              >
+                Promotions
+              </Text>
+              <Promotions />
+            </View>
 
-        {/* SECTION 3: Order Summary */}
-        <View
-          style={[
-            styles.whiteBox,
-            { backgroundColor: colors.backgroundElevated },
-          ]}
-        >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Order Summary
-          </Text>
-          <View style={styles.placeholder}>
-            <Text style={{ color: colors.textSecondary }}>
-              Taxes & delivery breakdown here
-            </Text>
-          </View>
-        </View>
+            <View
+              style={[
+                styles.whiteBox,
+                { backgroundColor: colors.backgroundElevated },
+              ]}
+            >
+              <Text
+                style={[styles.sectionTitle, { color: colors.textPrimary }]}
+              >
+                Order Summary
+              </Text>
+              <View style={styles.placeholder}>
+                <Text style={{ color: colors.textSecondary }}>
+                  Taxes & delivery breakdown here
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
 
-      {/* Fixed Bottom Bar */}
       <CheckoutBar />
     </SafeAreaView>
   );
