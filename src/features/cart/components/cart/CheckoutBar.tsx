@@ -1,11 +1,24 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { useCartStore } from "@/src/store/cart.store";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { usePlaceOrder } from "../../cart.query";
 const CheckoutBar = () => {
   const colors = useThemeColor();
   const total = useCartStore((s) => s.total);
+  const { mutate, isPending } = usePlaceOrder();
+  const cart = useCartStore();
+
+  const handleCheckout = () => {
+    mutate({
+      items: cart.items.map((i) => ({
+        id: i.id,
+        quantity: i.quantity,
+      })),
+      promotion_id: cart.appliedPromotion?.id ?? null,
+    });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.actionPrimary }]}>
@@ -14,8 +27,14 @@ const CheckoutBar = () => {
         <Text style={styles.subLabel}>Final amount may change</Text>
       </View>
 
-      <TouchableOpacity>
-        <Text style={styles.checkout}>Checkout →</Text>
+      <TouchableOpacity style={styles.button} onPress={handleCheckout}>
+        <Text style={[styles.checkout, { color: colors.actionPrimary }]}>
+          Checkout
+        </Text>
+        <Ionicons
+          name="chevron-forward-outline"
+          style={[styles.checkout, { color: colors.actionPrimary }]}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -48,7 +67,16 @@ const styles = StyleSheet.create({
   },
   checkout: {
     color: "white",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "800",
+  },
+  button: {
+    flexDirection: "row",
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
+    borderRadius: 4,
+    gap: 4,
   },
 });
