@@ -1,35 +1,32 @@
+import { useThemeColor } from "@/src/hooks/useThemeColors";
+import { ThemedText } from "@/src/themed/ThemedText";
 import React from "react";
 import {
-  View,
+  Dimensions,
   Image,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  View,
 } from "react-native";
-import { ThemedText } from "@/src/themed/ThemedText";
-import { useThemeColor } from "@/src/hooks/useThemeColors";
-
+import { useFoodImages } from "../../photos/pexels.query";
+import { MenuItem } from "../menu.types";
 const { width } = Dimensions.get("window");
 // Calculate card width for 2 columns with padding
 // Screen Padding (16*2) + Gap (12) = 44 total deduction
 const CARD_WIDTH = (width - 44) / 2;
 
-export type MenuItem = {
-  id: number;
-  name: string;
-  price: number;
-  out_of_stock: boolean;
-};
-
-interface MenuItemCardProps {
+interface MenuEditorItemCardProps {
   item: MenuItem;
   onToggleStock: (id: number, currentStatus: boolean) => void;
 }
 
-export const MenuItemCard = ({ item, onToggleStock }: MenuItemCardProps) => {
+export const MenuEditorItemCard = ({
+  item,
+  onToggleStock,
+}: MenuEditorItemCardProps) => {
   const colors = useThemeColor();
   const isOutOfStock = item.out_of_stock;
-
+  const { data } = useFoodImages(item.name);
   return (
     <View
       style={[
@@ -48,7 +45,7 @@ export const MenuItemCard = ({ item, onToggleStock }: MenuItemCardProps) => {
       {/* 1. Image Section (Top Half) */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: `https://picsum.photos/seed/${item.id}/400/300` }}
+          source={{ uri: data?.[0]?.src?.medium }}
           style={[styles.image, isOutOfStock && styles.imageGrayscale]}
         />
         {/* Out of Stock Badge */}
