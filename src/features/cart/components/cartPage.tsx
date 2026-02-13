@@ -108,19 +108,10 @@ const CartPage = () => {
               <Promotions />
             </View>
 
-            <View
-              style={[
-                styles.whiteBox,
-                { backgroundColor: colors.backgroundElevated },
-              ]}
-            >
-              <Text
-                style={[styles.sectionTitle, { color: colors.textPrimary }]}
-              >
-                Order Summary
-              </Text>
-              <CartSummary />
-            </View>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Order Summary
+            </Text>
+            <CartSummary />
           </>
         )}
       </ScrollView>
