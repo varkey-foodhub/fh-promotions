@@ -15,7 +15,7 @@ export const useActivePromotions = () => {
   return useQuery({
     queryKey: ["promotions", "active"],
     queryFn: fetchActivePromotions,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0,
   });
 };
 
@@ -23,7 +23,7 @@ export const useExpiredPromotions = (page: number = 1, limit: number = 5) => {
   return useQuery({
     queryKey: ["promotions", "expired", page, limit],
     queryFn: () => fetchExpiredPromotions(page, limit),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0,
   });
 };
 
