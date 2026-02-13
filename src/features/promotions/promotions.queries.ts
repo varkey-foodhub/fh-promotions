@@ -8,6 +8,7 @@ import {
   createPromotion,
   deletePromotion,
   fetchActivePromotions,
+  fetchDiscounts,
   fetchExpiredPromotions,
   togglePromotion,
 } from "./promotions.api";
@@ -210,5 +211,13 @@ export const useTogglePromotion = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["promotions"] });
     },
+  });
+};
+
+export const useDiscounts = () => {
+  return useQuery({
+    queryKey: ["promotions", "discounts"],
+    queryFn: fetchDiscounts,
+    staleTime: 1000 * 60 * 5,
   });
 };
