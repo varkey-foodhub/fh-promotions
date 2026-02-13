@@ -50,3 +50,25 @@ export const fetchExpiredPromotions = async (
     throw new Error("Unexpected error occurred");
   }
 };
+
+export const deletePromotion = async (id: number): Promise<number> => {
+  try {
+    const response = await axiosInstance.delete(`/promotions/`, {
+      data: { id: id },
+    });
+    return response.data.data.id;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error("Promotions API Error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      throw new Error(
+        error.response?.data?.message || "Failed to delete promotion",
+      );
+    }
+    console.error("Unexpected Error:", error);
+    throw new Error("Unexpected error occurred");
+  }
+};

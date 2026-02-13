@@ -20,13 +20,14 @@ import { Promotion } from "../promotions.types";
 import { useDebounce } from "../hooks/useDebounce";
 import {
   useActivePromotions,
+  useDeletePromotion,
   useExpiredPromotions,
 } from "../promotions.queries";
 import { fuzzySearch } from "../utils/search";
-
 const PromotionsPage = () => {
   const colors = useThemeColor();
   const router = useRouter();
+  const deleteMutation = useDeletePromotion();
 
   // --- State ---
   const [expiredPage, setExpiredPage] = useState(1);
@@ -93,7 +94,7 @@ const PromotionsPage = () => {
 
   // --- Handlers ---
   const handleDelete = (id: number) => {
-    // Implement delete mutation here
+    deleteMutation.mutate(id);
     console.log("Delete", id);
   };
 
