@@ -19,6 +19,8 @@ const MenuItemCard = ({ item }: Props) => {
   );
   const addItem = useCartStore((s) => s.addItem);
 
+  const imageUrl = data?.[0]?.src?.medium;
+
   return (
     <View
       style={[
@@ -26,11 +28,23 @@ const MenuItemCard = ({ item }: Props) => {
         {
           backgroundColor: colors.backgroundElevated,
           borderColor: colors.borderLight,
+          opacity: item.out_of_stock ? 0.85 : 1,
         },
       ]}
     >
-      {/* 🔥 DEMO IMAGE */}
-      <Image source={{ uri: data?.[0]?.src?.medium }} style={styles.image} />
+      {/* 🔥 IMAGE WRAPPER */}
+      <View style={styles.imageWrapper}>
+        <Image
+          source={{ uri: imageUrl }}
+          style={[styles.image, item.out_of_stock && styles.grayscaleImage]}
+        />
+
+        {item.out_of_stock && (
+          <View style={styles.overlay}>
+            <Text style={styles.overlayText}>OUT OF STOCK</Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.infoContainer}>
         <Text
@@ -43,14 +57,19 @@ const MenuItemCard = ({ item }: Props) => {
         <Text style={[styles.price, { color: colors.textSecondary }]}>
           ₹{item.price}
         </Text>
-
-        {item.out_of_stock && <Text style={styles.out}>Out of stock</Text>}
       </View>
 
       <View style={styles.actionContainer}>
-        {quantity === 0 ? (
+        {item.out_of_stock ? (
+          <View
+            style={[styles.disabledBtn, { borderColor: colors.borderLight }]}
+          >
+            <Text style={{ color: colors.textSecondary, fontWeight: "700" }}>
+              UNAVAILABLE
+            </Text>
+          </View>
+        ) : quantity === 0 ? (
           <TouchableOpacity
-            disabled={item.out_of_stock}
             onPress={() => addItem(item)}
             style={[styles.addBtn, { borderColor: colors.actionPrimary }]}
           >
@@ -81,30 +100,65 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
   },
+
+  imageWrapper: {
+    position: "relative",
+  },
+
   image: {
     width: "100%",
     height: 120,
   },
+
+  grayscaleImage: {
+    opacity: 0.5, // RN does not support native grayscale filter
+  },
+
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  overlayText: {
+    color: "white",
+    fontWeight: "800",
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+
   infoContainer: {
     padding: 10,
     gap: 4,
   },
+
   actionContainer: {
     paddingHorizontal: 10,
     paddingBottom: 12,
   },
+
   name: {
     fontSize: 14,
     fontWeight: "700",
   },
+
   price: {
     fontSize: 13,
   },
-  out: {
-    fontSize: 12,
-    color: "#ff4d4f",
-  },
+
   addBtn: {
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: "center",
+  },
+
+  disabledBtn: {
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 2,
