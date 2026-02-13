@@ -22,13 +22,14 @@ import {
   useActivePromotions,
   useDeletePromotion,
   useExpiredPromotions,
+  useTogglePromotion,
 } from "../promotions.queries";
 import { fuzzySearch } from "../utils/search";
 const PromotionsPage = () => {
   const colors = useThemeColor();
   const router = useRouter();
   const deleteMutation = useDeletePromotion();
-
+  const toggleMutation = useTogglePromotion();
   // --- State ---
   const [expiredPage, setExpiredPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,8 +96,7 @@ const PromotionsPage = () => {
   // --- Handlers ---
 
   const handleToggle = (id: number, val: boolean) => {
-    // Implement toggle mutation here
-    console.log("Toggle", id, val);
+    toggleMutation.mutate({ id, active: val });
   };
 
   const handler = {

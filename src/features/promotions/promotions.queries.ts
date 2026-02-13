@@ -9,6 +9,7 @@ import {
   deletePromotion,
   fetchActivePromotions,
   fetchExpiredPromotions,
+  togglePromotion,
 } from "./promotions.api";
 
 export const useActivePromotions = () => {
@@ -140,6 +141,72 @@ export const useCreatePromotion = () => {
       queryClient.invalidateQueries({ queryKey: ["promotions"] });
     },
 
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+  });
+};
+
+export const useTogglePromotion = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
+      togglePromotion(id, active),
+
+    // 🔥 OPTIMISTIC UPDATE
+    onMutate: async ({ id, active }) => {
+      await queryClient.cancelQueries({ queryKey: ["promotions"] });
+
+      const previousActive = queryClient.getQueryData(["promotions", "active"]);
+
+      const previousExpiredQueries = queryClient.getQueriesData([
+        "promotions",
+        "expired",
+      ] as QueryFilters);
+
+      // 1️⃣ Update ACTIVE cache
+      queryClient.setQueryData(["promotions", "active"], (old: any) => {
+        if (!old?.data) return old;
+
+        return {
+          ...old,
+          data: old.data.map((p: any) => (p.id === id ? { ...p, active } : p)),
+        };
+      });
+
+      // 2️⃣ Update EXPIRED pages
+      previousExpiredQueries.forEach(([queryKey, queryData]: any) => {
+        if (!queryData?.data) return;
+
+        queryClient.setQueryData(queryKey, {
+          ...queryData,
+          data: queryData.data.map((p: any) =>
+            p.id === id ? { ...p, active } : p,
+          ),
+        });
+      });
+
+      return { previousActive, previousExpiredQueries };
+    },
+
+    // 🔁 Rollback if failed
+    onError: (_err, _variables, context: any) => {
+      if (context?.previousActive) {
+        queryClient.setQueryData(
+          ["promotions", "active"],
+          context.previousActive,
+        );
+      }
+
+      if (context?.previousExpiredQueries) {
+        context.previousExpiredQueries.forEach(([queryKey, queryData]: any) => {
+          queryClient.setQueryData(queryKey, queryData);
+        });
+      }
+    },
+
+    // 🔄 Ensure consistency
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["promotions"] });
     },
