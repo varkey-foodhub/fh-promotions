@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import CartItemRow from "./cart/CartItemRow";
 import CheckoutBar from "./cart/CheckoutBar";
-
+import Promotions from "./promotions";
 const CartPage = () => {
   const colors = useThemeColor();
   const router = useRouter();
@@ -101,11 +101,7 @@ const CartPage = () => {
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
             Promotions
           </Text>
-          <View style={styles.placeholder}>
-            <Text style={{ color: colors.textSecondary }}>
-              Apply coupon here
-            </Text>
-          </View>
+          <Promotions />
         </View>
 
         {/* SECTION 3: Order Summary */}
