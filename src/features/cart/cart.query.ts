@@ -15,8 +15,8 @@ export const usePlaceOrder = () => {
     onSuccess: () => {
       // Clear cart only after successful order
       clearCart();
-      router.navigate("/menu/success");
 
+      router.navigate("/menu/success");
       // Optional: invalidate orders list if you have one
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },

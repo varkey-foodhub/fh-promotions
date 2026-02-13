@@ -4,12 +4,17 @@ import LottieView from "lottie-react-native";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import Toast from "react-native-toast-message";
 const Success = () => {
   const colors = useThemeColor();
   const router = useRouter();
 
   useEffect(() => {
+    Toast.show({
+      type: "success",
+      text1: "Order Placed",
+      text2: "Your food is being prepared",
+    });
     const timer = setTimeout(() => {
       router.replace("/menu");
     }, 3000);
