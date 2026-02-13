@@ -5,12 +5,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const CheckoutBar = () => {
   const colors = useThemeColor();
-  const subtotal = useCartStore((s) => s.subtotal);
+  const total = useCartStore((s) => s.total);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.actionPrimary }]}>
       <View>
-        <Text style={styles.totalText}>₹{subtotal}</Text>
+        <Text style={styles.totalText}>₹{total}</Text>
         <Text style={styles.subLabel}>Final amount may change</Text>
       </View>
 
