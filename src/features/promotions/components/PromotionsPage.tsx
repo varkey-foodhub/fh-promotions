@@ -1,6 +1,8 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { ThemedText } from "@/src/themed/ThemedText";
 import React, { useMemo, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import {
   ActivityIndicator,
   ScrollView,
@@ -12,7 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 // Components
 import { FilterBar } from "./FilterBar";
-import { PaginationFooter } from "./PaginationFooter";
 import { PromotionCard } from "./PromotionCard";
 
 // API Hooks
@@ -26,6 +27,8 @@ import { useDebounce } from "../hooks/useDebounce";
 import { fuzzySearch } from "../utils/search";
 
 const PromotionsPage = () => {
+  const insets = useSafeAreaInsets();
+
   const colors = useThemeColor();
   const [expiredPage, setExpiredPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,8 +53,8 @@ const PromotionsPage = () => {
 
   const activePromos = activeData?.data || [];
   const expiredPromos = expiredData?.data || [];
-  const expiredPagination = expiredData?.pagination;
-
+  const expiredPagination = expiredData?.page;
+  console.log(expiredPagination);
   // Fuzzy search on active promotions
   const filteredActivePromos = useMemo(() => {
     if (!debouncedSearchQuery.trim()) return activePromos;
@@ -65,13 +68,12 @@ const PromotionsPage = () => {
         { backgroundColor: colors.backgroundSecondary },
       ]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* 1. Header & Title */}
+      {/* ===== Sticky Header ===== */}
+      <View style={styles.stickyHeader}>
         <ThemedText variant="title" style={styles.pageTitle}>
-          Restaurant Dashboard
+          Manage Promotions
         </ThemedText>
 
-        {/* 2. Main Action Button */}
         <TouchableOpacity
           activeOpacity={0.8}
           style={[
@@ -83,9 +85,21 @@ const PromotionsPage = () => {
             + Create New Promotion
           </ThemedText>
         </TouchableOpacity>
+      </View>
 
+      {/* ===== Scrollable Middle Section ===== */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* 3. Filters */}
-        <FilterBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <View style={styles.whiteCard}>
+          <FilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        </View>
 
         {/* 4. Active Section */}
         <View style={styles.section}>
@@ -149,74 +163,71 @@ const PromotionsPage = () => {
           {expiredPromos.map((item) => (
             <PromotionCard key={item.id} item={item} onDelete={() => {}} />
           ))}
-
-          {/* Pagination Controls */}
-          {expiredPagination && expiredPagination.pages > 1 && (
-            <View style={styles.paginationControls}>
-              <TouchableOpacity
-                onPress={() => setExpiredPage(Math.max(1, expiredPage - 1))}
-                disabled={expiredPage === 1}
-                style={[
-                  styles.pageButton,
-                  {
-                    backgroundColor:
-                      expiredPage === 1
-                        ? colors.backgroundElevated
-                        : colors.actionPrimary,
-                  },
-                ]}
-              >
-                <ThemedText
-                  style={{
-                    color:
-                      expiredPage === 1
-                        ? colors.textSecondary
-                        : colors.textInverse,
-                  }}
-                >
-                  Previous
-                </ThemedText>
-              </TouchableOpacity>
-
-              <ThemedText style={styles.pageIndicator}>
-                Page {expiredPage} of {expiredPagination.pages}
-              </ThemedText>
-
-              <TouchableOpacity
-                onPress={() =>
-                  setExpiredPage(
-                    Math.min(expiredPagination.pages, expiredPage + 1),
-                  )
-                }
-                disabled={expiredPage === expiredPagination.pages}
-                style={[
-                  styles.pageButton,
-                  {
-                    backgroundColor:
-                      expiredPage === expiredPagination.pages
-                        ? colors.backgroundElevated
-                        : colors.actionPrimary,
-                  },
-                ]}
-              >
-                <ThemedText
-                  style={{
-                    color:
-                      expiredPage === expiredPagination.pages
-                        ? colors.textSecondary
-                        : colors.textInverse,
-                  }}
-                >
-                  Next
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
-
-        {/* 6. Footer */}
-        <PaginationFooter />
       </ScrollView>
+
+      {/* ===== Sticky Footer (Pagination) ===== */}
+      {expiredPagination && (
+        <View style={[styles.stickyFooter]}>
+          <View style={styles.paginationControls}>
+            <TouchableOpacity
+              onPress={() => setExpiredPage(Math.max(1, expiredPage - 1))}
+              disabled={expiredPage === 1}
+              style={[
+                styles.pageButton,
+                {
+                  backgroundColor:
+                    expiredPage === 1
+                      ? colors.backgroundElevated
+                      : colors.actionPrimary,
+                },
+              ]}
+            >
+              <ThemedText
+                style={{
+                  color:
+                    expiredPage === 1
+                      ? colors.textSecondary
+                      : colors.textInverse,
+                }}
+              >
+                Previous
+              </ThemedText>
+            </TouchableOpacity>
+
+            <ThemedText style={styles.pageIndicator}>
+              Page {expiredPage} of {expiredPagination}
+            </ThemedText>
+
+            <TouchableOpacity
+              onPress={() =>
+                setExpiredPage(Math.min(expiredPagination, expiredPage + 1))
+              }
+              disabled={expiredPage === expiredPagination}
+              style={[
+                styles.pageButton,
+                {
+                  backgroundColor:
+                    expiredPage === expiredPagination
+                      ? colors.backgroundElevated
+                      : colors.actionPrimary,
+                },
+              ]}
+            >
+              <ThemedText
+                style={{
+                  color:
+                    expiredPage === expiredPagination
+                      ? colors.textSecondary
+                      : colors.textInverse,
+                }}
+              >
+                Next
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -230,6 +241,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
   },
+  whiteCard: {
+    backgroundColor: "white",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
   pageTitle: {
     fontSize: 24,
     fontWeight: "bold",
@@ -237,11 +254,10 @@ const styles = StyleSheet.create({
   },
   createButton: {
     width: "100%",
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
     // Red button shadow
     shadowColor: "#D82927", // Hardcoded brand red for shadow or use colors.accentCO
     shadowOffset: { width: 0, height: 4 },
@@ -263,7 +279,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: 16,
-    gap: 12,
   },
   pageButton: {
     paddingVertical: 8,
@@ -276,5 +291,14 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
     fontWeight: "600",
+  },
+  stickyHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+
+  stickyFooter: {
+    borderColor: "#eee",
   },
 });

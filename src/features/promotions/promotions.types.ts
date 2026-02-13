@@ -14,10 +14,8 @@ export interface ActivePromotionsResponse {
 
 export interface ExpiredPromotionsResponse {
   data: Promotion[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
