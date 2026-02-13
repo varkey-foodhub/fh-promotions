@@ -16,7 +16,8 @@ import {
   useMarkOutOfStock,
   useMenu,
 } from "../menu.queries";
-import { MenuItem, MenuItemCard } from "./MenuItemCard";
+import { MenuItem } from "../menu.types";
+import { MenuEditorItemCard } from "./MenuIEditortemCard";
 const MenuEditorPage = () => {
   const { data, isLoading, error } = useMenu();
   const colors = useThemeColor();
@@ -75,7 +76,7 @@ const MenuEditorPage = () => {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <MenuItemCard item={item} onToggleStock={handler.toggleStock} />
+          <MenuEditorItemCard item={item} onToggleStock={handler.toggleStock} />
         )}
       />
     </SafeAreaView>
