@@ -6,6 +6,8 @@ export interface Promotion {
   percent_off?: number;
   flat_amount?: number;
   active: boolean;
+  valid_from: string;
+  valid_to: string;
 }
 
 export interface ActivePromotionsResponse {
