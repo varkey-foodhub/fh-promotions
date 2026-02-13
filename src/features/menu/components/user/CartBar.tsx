@@ -11,16 +11,16 @@ const CartBar = () => {
   if (totalItems === 0) return null;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.actionPrimary }]}>
+    <TouchableOpacity
+      style={[styles.container, { backgroundColor: colors.actionPrimary }]}
+    >
       <View>
         <Text style={styles.items}>{totalItems} items</Text>
         <Text style={styles.price}>₹{subtotal}</Text>
       </View>
 
-      <TouchableOpacity>
-        <Text style={styles.cta}>View Cart →</Text>
-      </TouchableOpacity>
-    </View>
+      <Text style={styles.cta}>View Cart →</Text>
+    </TouchableOpacity>
   );
 };
 
