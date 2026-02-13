@@ -126,7 +126,6 @@ export const togglePromotion = async (
 export const fetchDiscounts = async (): Promise<Promotion[]> => {
   try {
     const response = await axiosInstance.get("/promotions/discounts");
-
     return response.data.data; // this is Promotion[]
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
@@ -139,6 +138,20 @@ export const fetchDiscounts = async (): Promise<Promotion[]> => {
       throw new Error(
         error.response?.data?.message || "Failed to fetch discounts",
       );
+    }
+
+    throw new Error("Unexpected error occurred");
+  }
+};
+
+export const fetchCoupon = async (code: string): Promise<Promotion> => {
+  try {
+    const response = await axiosInstance.get(`/promotions/coupons/${code}`);
+
+    return response.data.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || "Invalid coupon");
     }
 
     throw new Error("Unexpected error occurred");

@@ -30,7 +30,6 @@ interface CartState {
 
   recalculate: () => void;
 }
-
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -43,112 +42,26 @@ export const useCartStore = create<CartState>()(
       total: 0,
 
       // ----------------------------
-      // Cart Actions
-      // ----------------------------
-
-      addItem: (item, qty = 1) => {
-        if (item.out_of_stock) return;
-
-        const existing = get().items.find((i) => i.id === item.id);
-
-        if (existing) {
-          set({
-            items: get().items.map((i) =>
-              i.id === item.id ? { ...i, quantity: i.quantity + qty } : i,
-            ),
-          });
-        } else {
-          set({
-            items: [...get().items, { ...item, quantity: qty }],
-          });
-        }
-
-        get().recalculate();
-      },
-
-      removeItem: (id) => {
-        set({
-          items: get().items.filter((i) => i.id !== id),
-        });
-        get().recalculate();
-      },
-
-      increment: (id) => {
-        set({
-          items: get().items.map((i) =>
-            i.id === id ? { ...i, quantity: i.quantity + 1 } : i,
-          ),
-        });
-        get().recalculate();
-      },
-
-      decrement: (id) => {
-        set({
-          items: get()
-            .items.map((i) =>
-              i.id === id ? { ...i, quantity: i.quantity - 1 } : i,
-            )
-            .filter((i) => i.quantity > 0),
-        });
-        get().recalculate();
-      },
-
-      clearCart: () => {
-        set({
-          items: [],
-          appliedPromotion: null,
-          discountAmount: 0,
-          totalItems: 0,
-          subtotal: 0,
-          total: 0,
-        });
-      },
-
-      // ----------------------------
-      // Promotion Logic
-      // ----------------------------
-
-      applyPromotion: (promotion) => {
-        const now = new Date();
-
-        const isValid =
-          promotion.active &&
-          new Date(promotion.valid_from) <= now &&
-          new Date(promotion.valid_to) >= now;
-
-        if (!isValid) return false;
-
-        set({ appliedPromotion: promotion });
-        get().recalculate();
-
-        return true;
-      },
-
-      removePromotion: () => {
-        set({
-          appliedPromotion: null,
-          discountAmount: 0,
-        });
-        get().recalculate();
-      },
-
-      // ----------------------------
-      // Recalculation Engine
+      // INTERNAL CALCULATOR
       // ----------------------------
 
       recalculate: () => {
         const { items, appliedPromotion } = get();
 
-        const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+        const totalItems = items.reduce((acc, i) => acc + i.quantity, 0);
 
         const subtotal = items.reduce(
-          (acc, item) => acc + item.quantity * item.price,
+          (acc, i) => acc + i.quantity * i.price,
           0,
         );
+        if (subtotal === 0) {
+          set({ appliedPromotion: null, discountAmount: 0, total: 0 });
+          return;
+        }
 
         let discountAmount = 0;
 
-        if (appliedPromotion) {
+        if (appliedPromotion && subtotal > 0) {
           if (
             appliedPromotion.type === "PERCENTAGE" &&
             appliedPromotion.percent_off
@@ -164,7 +77,6 @@ export const useCartStore = create<CartState>()(
           }
         }
 
-        // Prevent negative totals
         discountAmount = Math.min(discountAmount, subtotal);
 
         const total = subtotal - discountAmount;
@@ -175,6 +87,93 @@ export const useCartStore = create<CartState>()(
           discountAmount,
           total,
         });
+      },
+
+      // ----------------------------
+      // CART ACTIONS
+      // ----------------------------
+
+      addItem: (item, qty = 1) => {
+        if (item.out_of_stock) return;
+
+        set((state) => {
+          const existing = state.items.find((i) => i.id === item.id);
+
+          const updatedItems = existing
+            ? state.items.map((i) =>
+                i.id === item.id ? { ...i, quantity: i.quantity + qty } : i,
+              )
+            : [...state.items, { ...item, quantity: qty }];
+
+          return { items: updatedItems };
+        });
+
+        get().recalculate();
+      },
+
+      removeItem: (id) => {
+        set((state) => ({
+          items: state.items.filter((i) => i.id !== id),
+        }));
+
+        get().recalculate();
+      },
+
+      increment: (id) => {
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.id === id ? { ...i, quantity: i.quantity + 1 } : i,
+          ),
+        }));
+
+        get().recalculate();
+      },
+
+      decrement: (id) => {
+        set((state) => ({
+          items: state.items
+            .map((i) => (i.id === id ? { ...i, quantity: i.quantity - 1 } : i))
+            .filter((i) => i.quantity > 0),
+        }));
+
+        get().recalculate();
+      },
+
+      clearCart: () => {
+        set({
+          items: [],
+          appliedPromotion: null,
+          discountAmount: 0,
+          totalItems: 0,
+          subtotal: 0,
+          total: 0,
+        });
+      },
+
+      // ----------------------------
+      // PROMOTION LOGIC
+      // ----------------------------
+
+      applyPromotion: (promotion) => {
+        const now = new Date();
+
+        const isValid =
+          promotion.active &&
+          new Date(promotion.valid_from) <= now &&
+          new Date(promotion.valid_to) >= now;
+
+        if (!isValid) return false;
+
+        set({ appliedPromotion: promotion });
+
+        get().recalculate();
+
+        return true;
+      },
+
+      removePromotion: () => {
+        set({ appliedPromotion: null });
+        get().recalculate();
       },
     }),
     {

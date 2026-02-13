@@ -1,8 +1,9 @@
-import { useDiscounts } from "@/src/features/promotions/promotions.queries";
+import { useValidateCoupon } from "@/src/features/promotions/promotions.queries";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { useCartStore } from "@/src/store/cart.store";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
@@ -12,21 +13,33 @@ import {
 
 const CouponBox = () => {
   const colors = useThemeColor();
-  const { data = [] } = useDiscounts();
+
   const applyPromotion = useCartStore((s) => s.applyPromotion);
+  const removePromotion = useCartStore((s) => s.removePromotion);
+  const appliedPromotion = useCartStore((s) => s.appliedPromotion);
+
+  const { mutateAsync, isPending } = useValidateCoupon();
 
   const [couponCode, setCouponCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleApply = () => {
-    const promo = data.find(
-      (p) =>
-        p.application_method === "CODE" &&
-        p.code.toLowerCase() === couponCode.trim().toLowerCase(),
-    );
+  const handleApply = async () => {
+    if (!couponCode.trim()) return;
 
-    if (promo) {
+    try {
+      setError(null);
+
+      const promo = await mutateAsync(couponCode.trim());
+
+      if (!promo.active) {
+        setError("Coupon is not active");
+        return;
+      }
+
       applyPromotion(promo);
       setCouponCode("");
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
@@ -46,12 +59,58 @@ const CouponBox = () => {
         />
 
         <TouchableOpacity
+          disabled={isPending}
           onPress={handleApply}
-          style={[styles.applyBtn, { backgroundColor: colors.actionPrimary }]}
+          style={[
+            styles.applyBtn,
+            {
+              backgroundColor: isPending
+                ? colors.borderLight
+                : colors.actionPrimary,
+            },
+          ]}
         >
-          <Text style={{ color: "white", fontWeight: "600" }}>Apply</Text>
+          {isPending ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text style={{ color: "white", fontWeight: "600" }}>Apply</Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      {error && <Text style={{ color: "red", marginTop: 6 }}>{error}</Text>}
+
+      {/* 🔥 APPLIED PROMOTION CARD */}
+      {appliedPromotion && appliedPromotion.application_method === "CODE" && (
+        <View
+          style={[
+            styles.appliedCard,
+            {
+              backgroundColor: colors.backgroundElevated,
+              borderColor: colors.actionPrimary,
+            },
+          ]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.appliedTitle, { color: colors.textPrimary }]}>
+              {appliedPromotion.name} Applied
+            </Text>
+
+            <Text style={{ color: colors.textSecondary }}>
+              {appliedPromotion.type === "PERCENTAGE"
+                ? `${appliedPromotion.percent_off}% OFF`
+                : `₹${appliedPromotion.flat_amount} OFF`}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={removePromotion}
+            style={[styles.removeBtn, { borderColor: colors.borderLight }]}
+          >
+            <Text style={{ color: colors.textSecondary }}>Remove</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </>
   );
 };
@@ -80,5 +139,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
+  },
+  appliedCard: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  appliedTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  removeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 6,
   },
 });

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CartItemRow from "./cart/CartItemRow";
+import CartSummary from "./cart/CartSummary";
 import CheckoutBar from "./cart/CheckoutBar";
 import Promotions from "./promotions";
 const CartPage = () => {
@@ -118,11 +119,7 @@ const CartPage = () => {
               >
                 Order Summary
               </Text>
-              <View style={styles.placeholder}>
-                <Text style={{ color: colors.textSecondary }}>
-                  Taxes & delivery breakdown here
-                </Text>
-              </View>
+              <CartSummary />
             </View>
           </>
         )}

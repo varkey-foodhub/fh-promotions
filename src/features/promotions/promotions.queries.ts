@@ -8,6 +8,7 @@ import {
   createPromotion,
   deletePromotion,
   fetchActivePromotions,
+  fetchCoupon,
   fetchDiscounts,
   fetchExpiredPromotions,
   togglePromotion,
@@ -219,5 +220,11 @@ export const useDiscounts = () => {
     queryKey: ["promotions", "discounts"],
     queryFn: fetchDiscounts,
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useValidateCoupon = () => {
+  return useMutation({
+    mutationFn: (code: string) => fetchCoupon(code),
   });
 };
