@@ -1,3 +1,4 @@
+import { useFoodImages } from "@/src/features/photos/pexels.query";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { useCartStore } from "@/src/store/cart.store";
 import React from "react";
@@ -11,6 +12,7 @@ interface Props {
 
 const MenuItemCard = ({ item }: Props) => {
   const colors = useThemeColor();
+  const { data } = useFoodImages(item.name);
 
   const quantity = useCartStore(
     (s) => s.items.find((i) => i.id === item.id)?.quantity ?? 0,
@@ -28,12 +30,7 @@ const MenuItemCard = ({ item }: Props) => {
       ]}
     >
       {/* 🔥 DEMO IMAGE */}
-      <Image
-        source={{
-          uri: `https://picsum.photos/300/300?random=${item.id}`,
-        }}
-        style={styles.image}
-      />
+      <Image source={{ uri: data?.[0]?.src?.medium }} style={styles.image} />
 
       <View style={styles.infoContainer}>
         <Text

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useFoodImages } from "../../photos/pexels.query";
 import { MenuItem } from "../menu.types";
 const { width } = Dimensions.get("window");
 // Calculate card width for 2 columns with padding
@@ -25,7 +26,7 @@ export const MenuEditorItemCard = ({
 }: MenuEditorItemCardProps) => {
   const colors = useThemeColor();
   const isOutOfStock = item.out_of_stock;
-
+  const { data } = useFoodImages(item.name);
   return (
     <View
       style={[
@@ -44,7 +45,7 @@ export const MenuEditorItemCard = ({
       {/* 1. Image Section (Top Half) */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: `https://picsum.photos/seed/${item.id}/400/300` }}
+          source={{ uri: data?.[0]?.src?.medium }}
           style={[styles.image, isOutOfStock && styles.imageGrayscale]}
         />
         {/* Out of Stock Badge */}
