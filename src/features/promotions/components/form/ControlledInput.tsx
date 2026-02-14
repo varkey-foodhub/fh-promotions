@@ -1,4 +1,5 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
+import { ThemedText } from "@/src/themed/ThemedText";
 import React from "react";
 import {
   Control,
@@ -14,14 +15,12 @@ import {
   TextInputProps,
   View,
 } from "react-native";
-import CreatePromotionFieldTitle from "./CreatePromotionFieldTitle";
 
 type ControlledInputProps<T extends FieldValues> = {
   name: Path<T>;
   control: Control<T>;
   label?: string;
   required?: boolean;
-  // New prop to accept validation rules (e.g. required: "Error message")
   rules?: RegisterOptions<T, Path<T>>;
   inputProps?: TextInputProps;
 };
@@ -31,48 +30,72 @@ export function ControlledInput<T extends FieldValues>({
   control,
   label,
   required = false,
-  rules, // Destructure rules
+  rules,
   inputProps,
 }: ControlledInputProps<T>) {
   const colors = useThemeColor();
 
   return (
     <View style={styles.container}>
-      {label && <CreatePromotionFieldTitle text={label} />}
-
+      {label && (
+        <View style={styles.labelRow}>
+          <ThemedText style={styles.label}>{label}</ThemedText>
+          {required && (
+            <Text
+              style={[
+                styles.asterisk,
+                { color: colors.actionNegative ?? "red" },
+              ]}
+            >
+              *
+            </Text>
+          )}
+        </View>
+      )}
       <Controller
         control={control}
         name={name}
-        rules={rules} // Pass rules to the Controller
+        rules={rules}
         render={({ field: { onChange, onBlur, value }, fieldState }) => (
           <>
-            <TextInput
+            <View
               style={[
-                styles.input,
+                styles.inputWrapper,
                 {
                   borderColor: fieldState.error
                     ? (colors.actionNegative ?? "red")
+                    : fieldState.isTouched
+                    ? colors.accentCO
                     : colors.borderLight,
-                  color: colors.textPrimary,
-                  backgroundColor: colors.backgroundPrimary, // Ensure background matches theme
+                  backgroundColor: "#FAFAFA",
                 },
               ]}
-              value={value ? String(value) : ""}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              placeholderTextColor={colors.textLight}
-              {...inputProps}
-            />
-
-            {fieldState.error && (
-              <Text
+            >
+              <TextInput
                 style={[
-                  styles.errorText,
-                  { color: colors.actionNegative ?? "red" },
+                  styles.input,
+                  {
+                    color: colors.textPrimary,
+                  },
                 ]}
-              >
-                {fieldState.error.message}
-              </Text>
+                value={value ? String(value) : ""}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                placeholderTextColor={colors.textLight}
+                {...inputProps}
+              />
+            </View>
+            {fieldState.error && (
+              <View style={styles.errorContainer}>
+                <Text
+                  style={[
+                    styles.errorText,
+                    { color: colors.actionNegative ?? "red" },
+                  ]}
+                >
+                  {fieldState.error.message}
+                </Text>
+              </View>
             )}
           </>
         )}
@@ -85,16 +108,35 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 0,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+  labelRow: {
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 8,
+  },
+  label: {
     fontSize: 14,
+    fontWeight: "600",
+  },
+  asterisk: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  inputWrapper: {
+    borderWidth: 2,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  input: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+  },
+  errorContainer: {
+    marginTop: 6,
+    marginLeft: 4,
   },
   errorText: {
     fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
+    fontWeight: "500",
   },
 });

@@ -12,16 +12,18 @@ import { ControlledDatePicker } from "./form/ControlledDatePicker";
 import { ControlledInput } from "./form/ControlledInput";
 import CreatePromotionFieldTitle from "./form/CreatePromotionFieldTitle";
 import SelectionButton from "./form/ToggleButton";
+
 const CreatePromotionForm = () => {
   const colors = useThemeColor();
   const insets = useSafeAreaInsets();
   const createMutation = useCreatePromotion();
   const router = useRouter();
+
   const {
     control,
     handleSubmit,
     watch,
-    formState: { isValid }, // 1. Get validation state
+    formState: { isValid },
   } = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -33,7 +35,7 @@ const CreatePromotionForm = () => {
       valid_to: "",
       active: true,
     },
-    mode: "onChange", // 2. Enable real-time validation checking
+    mode: "onChange",
   });
 
   const selectedType = watch("type");
@@ -68,8 +70,8 @@ const CreatePromotionForm = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.formContentContainer}>
-          {/* Promotion Type */}
-          <View>
+          {/* Promotion Type Section */}
+          <View style={styles.section}>
             <CreatePromotionFieldTitle text="Promotion Type" />
             <Controller
               control={control}
@@ -77,13 +79,13 @@ const CreatePromotionForm = () => {
               render={({ field: { onChange, value } }) => (
                 <View style={styles.buttonContainer}>
                   <SelectionButton
-                    label="Coupon"
+                    label="Coupon Code"
                     isSelected={value === "CODE"}
                     onPress={() => onChange("CODE")}
                     colors={colors}
                   />
                   <SelectionButton
-                    label="Discount"
+                    label="Auto Discount"
                     isSelected={value === "DISCOUNT"}
                     onPress={() => onChange("DISCOUNT")}
                     colors={colors}
@@ -91,27 +93,50 @@ const CreatePromotionForm = () => {
                 </View>
               )}
             />
+            <ThemedText style={styles.helperText}>
+              {watch("application_method") === "CODE"
+                ? "Customers enter this code at checkout"
+                : "Automatically applied to eligible orders"}
+            </ThemedText>
           </View>
 
-          <ControlledInput<FormValues>
-            name="name"
-            control={control}
-            label="Promotion Name"
-            required
-            rules={{ required: "Promotion name is required" }}
-          />
+          {/* Basic Info Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionDivider} />
+            <ControlledInput<FormValues>
+              name="name"
+              control={control}
+              label="Promotion Name"
+              required
+              rules={{ required: "Promotion name is required" }}
+              inputProps={{
+                placeholder: "e.g., Summer Sale 2024",
+              }}
+            />
 
-          <ControlledInput<FormValues>
-            name="code"
-            control={control}
-            label="Promotion Code"
-            required
-            rules={{ required: "Code is required" }}
-          />
+            <ControlledInput<FormValues>
+              name="code"
+              control={control}
+              label="Promotion Code"
+              required
+              rules={{
+                required: "Code is required",
+                pattern: {
+                  value: /^[A-Z0-9]+$/,
+                  message: "Code must be uppercase letters/numbers only",
+                },
+              }}
+              inputProps={{
+                placeholder: "e.g., SUMMER50",
+                autoCapitalize: "characters",
+              }}
+            />
+          </View>
 
-          {/* Value Type */}
-          <View>
-            <CreatePromotionFieldTitle text="Value Type" />
+          {/* Discount Value Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionDivider} />
+            <CreatePromotionFieldTitle text="Discount Type" />
             <Controller
               control={control}
               name="type"
@@ -128,58 +153,85 @@ const CreatePromotionForm = () => {
                     dropdownIconColor={colors.textPrimary}
                     style={{ color: colors.textPrimary }}
                   >
-                    <Picker.Item label="Select..." value="" />
                     <Picker.Item label="Percentage (%)" value="PERCENTAGE" />
-                    <Picker.Item label="Fixed Amount ($)" value="FIXED" />
+                    <Picker.Item label="Fixed Amount (₹)" value="FIXED" />
                   </Picker>
                 </View>
               )}
               rules={{ required: true }}
             />
+
+            {/* Dynamic Value Input */}
+            <View style={styles.valueInputWrapper}>
+              {selectedType === "PERCENTAGE" ? (
+                <ControlledInput<FormValues>
+                  name="percent_off"
+                  control={control}
+                  label="Percentage Value"
+                  required
+                  rules={{
+                    required: "Percentage is required",
+                    min: {
+                      value: 1,
+                      message: "Must be at least 1%",
+                    },
+                    max: {
+                      value: 100,
+                      message: "Cannot exceed 100%",
+                    },
+                  }}
+                  inputProps={{
+                    placeholder: "e.g., 20",
+                    keyboardType: "numeric",
+                  }}
+                />
+              ) : (
+                <ControlledInput<FormValues>
+                  name="flat_amount"
+                  control={control}
+                  label="Fixed Amount"
+                  required
+                  rules={{
+                    required: "Amount is required",
+                    min: {
+                      value: 1,
+                      message: "Must be at least ₹1",
+                    },
+                  }}
+                  inputProps={{
+                    placeholder: "e.g., 100",
+                    keyboardType: "numeric",
+                  }}
+                />
+              )}
+            </View>
           </View>
 
-          {/* Dynamic Field */}
-          {selectedType === "PERCENTAGE" ? (
-            <ControlledInput<FormValues>
-              name="percent_off"
+          {/* Validity Period Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionDivider} />
+            <CreatePromotionFieldTitle text="Validity Period" />
+            
+            <ControlledDatePicker<FormValues>
+              name="valid_from"
               control={control}
-              label="Percentage Value"
+              label="Start Date"
               required
-              rules={{ required: "Percentage is required" }}
-              inputProps={{
-                placeholder: "e.g., 20",
-                keyboardType: "numeric",
-              }}
+              rules={{ required: "Start date is required" }}
             />
-          ) : (
-            <ControlledInput<FormValues>
-              name="flat_amount"
+
+            <ControlledDatePicker<FormValues>
+              name="valid_to"
               control={control}
-              label="Fixed Amount Details"
-              required
-              rules={{ required: "Amount is required" }}
-              inputProps={{
-                placeholder: "e.g., 10.00",
-                keyboardType: "numeric",
-              }}
+              label="End Date (Optional)"
             />
-          )}
+            
+            <ThemedText style={styles.helperText}>
+              Leave end date empty for no expiration
+            </ThemedText>
+          </View>
 
-          <ControlledDatePicker<FormValues>
-            name="valid_from"
-            control={control}
-            label="Start Date"
-            required
-            rules={{ required: "Start date is required" }}
-          />
-
-          <ControlledDatePicker<FormValues>
-            name="valid_to"
-            control={control}
-            label="End Date (Optional)"
-          />
-
-          <View style={{ height: 120 }} />
+          <View style={{ height: 100 }} />
         </View>
       </ScrollView>
 
@@ -188,34 +240,35 @@ const CreatePromotionForm = () => {
         style={[
           styles.bottomContainer,
           {
-            paddingBottom: 48 + insets.bottom,
-            backgroundColor: "white",
+            paddingBottom: Math.max(16, insets.bottom),
+            backgroundColor: colors.backgroundElevated,
           },
         ]}
       >
         <TouchableOpacity
           onPress={handleSubmit(onSubmit)}
-          disabled={!isValid} // Disable interaction if invalid
+          disabled={!isValid || createMutation.isPending}
           style={[
             styles.submitButton,
             {
-              // 4. Grey out if invalid, Primary color if valid
-              backgroundColor: isValid
-                ? colors.actionPrimary
-                : colors.borderLight, // or a specific 'disabled' gray color
+              backgroundColor: isValid && !createMutation.isPending
+                ? "#D32F2F"
+                : colors.borderLight,
             },
           ]}
+          activeOpacity={0.8}
         >
           <ThemedText
             style={[
               styles.buttonText,
               {
-                // Optional: Change text color when disabled
-                color: isValid ? "white" : colors.textSecondary,
+                color: isValid && !createMutation.isPending
+                  ? "white"
+                  : colors.textSecondary,
               },
             ]}
           >
-            Create Promotion
+            {createMutation.isPending ? "Creating..." : "Create Promotion"}
           </ThemedText>
         </TouchableOpacity>
       </View>
@@ -227,36 +280,65 @@ export default CreatePromotionForm;
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingTop: 24,
   },
   formContentContainer: {
-    gap: 20,
+    gap: 24,
+  },
+  section: {
+    gap: 16,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 8,
   },
   buttonContainer: {
     flexDirection: "row",
-    gap: 8,
-    marginTop: 6,
+    gap: 12,
   },
   dropdownContainer: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: "hidden",
+    backgroundColor: "#FAFAFA",
+  },
+  valueInputWrapper: {
+    marginTop: 4,
+  },
+  helperText: {
+    fontSize: 12,
+    opacity: 0.6,
+    fontStyle: "italic",
+    marginTop: -8,
   },
   bottomContainer: {
     borderTopWidth: 1,
-    borderColor: "#eee",
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    borderTopColor: "#F0F0F0",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 8,
   },
   submitButton: {
-    height: 50,
-    borderRadius: 8,
+    height: 52,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom:30
   },
   buttonText: {
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 16,
+    letterSpacing: 0.3,
   },
 });

@@ -23,7 +23,6 @@ type Props<T extends FieldValues> = {
   control: Control<T>;
   label: string;
   required?: boolean;
-  // Added rules prop for validation
   rules?: RegisterOptions<T, Path<T>>;
 };
 
@@ -38,18 +37,20 @@ export function ControlledDatePicker<T extends FieldValues>({
   const [show, setShow] = useState(false);
 
   const formatDate = (date?: string) => {
-    if (!date) return "dd/mm/yyyy";
+    if (!date) return "Select date";
     const d = new Date(date);
-    return `${String(d.getDate()).padStart(2, "0")}/${String(
-      d.getMonth() + 1,
-    ).padStart(2, "0")}/${d.getFullYear()}`;
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   return (
     <Controller
       control={control}
       name={name}
-      rules={rules} // Pass validation rules
+      rules={rules}
       render={({ field: { onChange, value }, fieldState: { error } }) => (
         <View style={styles.container}>
           <View style={styles.labelRow}>
@@ -65,44 +66,55 @@ export function ControlledDatePicker<T extends FieldValues>({
               </Text>
             )}
           </View>
-
           <TouchableOpacity
             style={[
               styles.inputContainer,
               {
-                // Dynamic border color based on error state
                 borderColor: error
                   ? (colors.actionNegative ?? "red")
+                  : value
+                  ? colors.accentCO
                   : colors.borderLight,
+                backgroundColor: "#FAFAFA",
               },
             ]}
             onPress={() => setShow(true)}
+            activeOpacity={0.7}
           >
-            <ThemedText
-              style={{
-                color: value ? colors.textPrimary : colors.textLight,
-              }}
-            >
-              {value ? formatDate(value) : "dd/mm/yyyy"}
-            </ThemedText>
-
+            <View style={styles.dateContent}>
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={value ? colors.textPrimary : colors.textLight}
+              />
+              <ThemedText
+                style={{
+                  color: value ? colors.textPrimary : colors.textLight,
+                  fontSize: 15,
+                  fontWeight: value ? "500" : "400",
+                }}
+              >
+                {formatDate(value)}
+              </ThemedText>
+            </View>
             <Ionicons
-              name="calendar-outline"
-              size={20}
+              name="chevron-down"
+              size={18}
               color={colors.textLight}
             />
           </TouchableOpacity>
 
-          {/* Error Message Display */}
           {error && (
-            <Text
-              style={[
-                styles.errorText,
-                { color: colors.actionNegative ?? "red" },
-              ]}
-            >
-              {error.message}
-            </Text>
+            <View style={styles.errorContainer}>
+              <Text
+                style={[
+                  styles.errorText,
+                  { color: colors.actionNegative ?? "red" },
+                ]}
+              >
+                {error.message}
+              </Text>
+            </View>
           )}
 
           {show && (
@@ -111,13 +123,10 @@ export function ControlledDatePicker<T extends FieldValues>({
               mode="date"
               display={Platform.OS === "ios" ? "inline" : "default"}
               onChange={(event, selectedDate) => {
-                // On Android, we close the picker after selection
                 if (Platform.OS === "android") {
                   setShow(false);
                 }
-
                 if (selectedDate) {
-                  // Store as ISO string
                   onChange(selectedDate.toISOString());
                 }
               }}
@@ -131,12 +140,12 @@ export function ControlledDatePicker<T extends FieldValues>({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 0, // Parent container handles gap usually, or set to 16 if needed
+    marginBottom: 0,
   },
   labelRow: {
     flexDirection: "row",
     gap: 4,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,
@@ -144,20 +153,28 @@ const styles = StyleSheet.create({
   },
   asterisk: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   inputContainer: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderWidth: 2,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+  dateContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  errorContainer: {
+    marginTop: 6,
+    marginLeft: 4,
+  },
   errorText: {
     fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
+    fontWeight: "500",
   },
 });
