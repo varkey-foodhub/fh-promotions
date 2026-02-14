@@ -33,6 +33,10 @@ export type FormValues = {
   valid_from: string;
   valid_to: string;
   active: boolean;
+  conditions?: {
+    required_item_ids?: number[];
+    min_order_value?: string;
+  };
 };
 
 export type CreatePromotionPayload = {
@@ -45,4 +49,8 @@ export type CreatePromotionPayload = {
   valid_from: string;
   valid_to: string;
   active: boolean;
+  conditions?: {
+    required_item_ids?: number[];
+    min_order_value?: number;
+  };
 };

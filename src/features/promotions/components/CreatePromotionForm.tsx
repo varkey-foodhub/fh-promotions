@@ -1,8 +1,10 @@
+import { useMenu } from "@/src/features/menu/menu.queries";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { ThemedText } from "@/src/themed/ThemedText";
+import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,17 +14,21 @@ import { ControlledDatePicker } from "./form/ControlledDatePicker";
 import { ControlledInput } from "./form/ControlledInput";
 import CreatePromotionFieldTitle from "./form/CreatePromotionFieldTitle";
 import SelectionButton from "./form/ToggleButton";
+import MenuItemSelector from "./MenuItemSelector";
 
 const CreatePromotionForm = () => {
   const colors = useThemeColor();
   const insets = useSafeAreaInsets();
   const createMutation = useCreatePromotion();
   const router = useRouter();
+  const { data: menuItems } = useMenu();
+  const [isMenuSelectorVisible, setIsMenuSelectorVisible] = useState(false);
 
   const {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { isValid },
   } = useForm<FormValues>({
     defaultValues: {
@@ -34,11 +40,26 @@ const CreatePromotionForm = () => {
       valid_from: "",
       valid_to: "",
       active: true,
+      conditions: {
+        required_item_ids: [],
+        min_order_value: "",
+      },
     },
     mode: "onChange",
   });
 
   const selectedType = watch("type");
+  const selectedItemIds = watch("conditions.required_item_ids") || [];
+
+  const getSelectedItems = () => {
+    if (!menuItems || selectedItemIds.length === 0) return [];
+    return menuItems.filter((item) => selectedItemIds.includes(item.id));
+  };
+
+  const handleRemoveItem = (itemId: number) => {
+    const updatedIds = selectedItemIds.filter((id) => id !== itemId);
+    setValue("conditions.required_item_ids", updatedIds);
+  };
 
   const onSubmit = (data: FormValues) => {
     const payload: CreatePromotionPayload = {
@@ -53,6 +74,18 @@ const CreatePromotionForm = () => {
         ? { percent_off: Number(data.percent_off) }
         : { flat_amount: Number(data.flat_amount) }),
     };
+
+    // Add conditions if any are specified
+    const hasRequiredItems = data.conditions?.required_item_ids && data.conditions.required_item_ids.length > 0;
+    const hasMinOrderValue = data.conditions?.min_order_value && data.conditions.min_order_value.trim() !== "";
+    
+    if (hasRequiredItems || hasMinOrderValue) {
+      payload.conditions = {
+        ...(hasRequiredItems && { required_item_ids: data.conditions!.required_item_ids }),
+        ...(hasMinOrderValue && { min_order_value: Number(data.conditions!.min_order_value) }),
+      };
+    }
+
     console.log(payload);
     createMutation.mutate(payload, {
       onSuccess: () => {
@@ -231,6 +264,98 @@ const CreatePromotionForm = () => {
             </ThemedText>
           </View>
 
+          {/* Conditions Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionDivider} />
+            <CreatePromotionFieldTitle text="Conditions (Optional)" />
+            
+            {/* Required Items */}
+            <View>
+              <ThemedText style={styles.label}>Required Items</ThemedText>
+              <TouchableOpacity
+                style={[
+                  styles.selectorButton,
+                  { borderColor: colors.borderLight },
+                ]}
+                onPress={() => setIsMenuSelectorVisible(true)}
+              >
+                <ThemedText
+                  style={[
+                    styles.selectorText,
+                    {
+                      color:
+                        selectedItemIds.length > 0
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {selectedItemIds.length > 0
+                    ? `${selectedItemIds.length} item${selectedItemIds.length > 1 ? "s" : ""} selected`
+                    : "Select items"}
+                </ThemedText>
+                <Ionicons
+                  name="add-circle-outline"
+                  size={22}
+                  color={colors.textPrimary}
+                />
+              </TouchableOpacity>
+
+              {/* Selected Items List */}
+              {getSelectedItems().length > 0 && (
+                <View style={styles.selectedItemsList}>
+                  {getSelectedItems().map((item) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.selectedItemChip,
+                        { backgroundColor: colors.backgroundElevated },
+                      ]}
+                    >
+                      <View style={styles.selectedItemInfo}>
+                        <ThemedText style={styles.selectedItemName}>
+                          {item.name}
+                        </ThemedText>
+                        <ThemedText style={styles.selectedItemPrice}>
+                          ₹{item.price}
+                        </ThemedText>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveItem(item.id)}
+                        style={styles.removeButton}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={20}
+                          color="#D32F2F"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <ThemedText style={styles.helperText}>
+                Select items required in cart for promotion to apply
+              </ThemedText>
+            </View>
+
+            {/* Min Order Value */}
+            <ControlledInput<FormValues>
+              name="conditions.min_order_value"
+              control={control}
+              label="Minimum Order Value (Optional)"
+              inputProps={{
+                placeholder: "e.g., 500",
+                keyboardType: "numeric",
+              }}
+            />
+            <ThemedText style={styles.helperText}>
+              Minimum cart value required for this promotion
+            </ThemedText>
+          </View>
+
           <View style={{ height: 100 }} />
         </View>
       </ScrollView>
@@ -272,6 +397,14 @@ const CreatePromotionForm = () => {
           </ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Menu Item Selector Modal */}
+      <MenuItemSelector
+        visible={isMenuSelectorVisible}
+        onClose={() => setIsMenuSelectorVisible(false)}
+        selectedIds={selectedItemIds}
+        onConfirm={(ids) => setValue("conditions.required_item_ids", ids)}
+      />
     </View>
   );
 };
@@ -340,5 +473,54 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
     letterSpacing: 0.3,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  selectorButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: "#FAFAFA",
+    minHeight: 56,
+  },
+  selectorText: {
+    fontSize: 16,
+    flex: 1,
+    marginRight: 8,
+  },
+  selectedItemsList: {
+    marginTop: 12,
+    gap: 8,
+  },
+  selectedItemChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  selectedItemInfo: {
+    flex: 1,
+  },
+  selectedItemName: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  selectedItemPrice: {
+    fontSize: 13,
+    opacity: 0.6,
+  },
+  removeButton: {
+    padding: 4,
+    marginLeft: 8,
   },
 });
