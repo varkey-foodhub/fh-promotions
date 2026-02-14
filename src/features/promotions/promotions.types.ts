@@ -9,6 +9,10 @@ export interface Promotion {
   valid_from: string;
   valid_to: string;
   application_method: "CODE" | "DISCOUNT";
+  conditions?: {
+    required_item_ids?: number[];
+    min_order_value?: number;
+  };
 }
 
 export interface ActivePromotionsResponse {

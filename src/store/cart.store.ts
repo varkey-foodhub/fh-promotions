@@ -1,7 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { MenuItem } from "../features/menu/menu.types";
+import { validate } from "../features/promotions/promotions.conditions.validator";
 import { Promotion } from "../features/promotions/promotions.types";
 
 export type CartItem = MenuItem & {
@@ -25,7 +27,7 @@ interface CartState {
   decrement: (id: number) => void;
   clearCart: () => void;
 
-  applyPromotion: (promotion: Promotion) => boolean;
+  applyPromotion: (promotion: Promotion) => Promise<boolean>;
   removePromotion: () => void;
 
   recalculate: () => void;
@@ -166,19 +168,55 @@ export const useCartStore = create<CartState>()(
       // PROMOTION LOGIC
       // ----------------------------
 
-      applyPromotion: (promotion) => {
+      applyPromotion: async (promotion) => {
         const now = new Date();
 
+        // Check if promotion is active and within valid dates
         const isValid =
           promotion.active &&
           new Date(promotion.valid_from) <= now &&
           new Date(promotion.valid_to) >= now;
 
-        if (!isValid) return false;
+        if (!isValid) {
+          Toast.show({
+            type: "error",
+            text1: "Promotion Expired",
+            text2: "This promotion is no longer valid",
+          });
+          return false;
+        }
 
+        // Validate conditions if they exist
+        const { items, subtotal } = get();
+        const order = {
+          items: items.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          total: subtotal,
+        };
+
+        const validationResult = await validate(promotion, order);
+
+        if (!validationResult.valid) {
+          Toast.show({
+            type: "error",
+            text1: "Cannot Apply Promotion",
+            text2: validationResult.error,
+          });
+          return false;
+        }
+
+        // All validations passed - apply the promotion
         set({ appliedPromotion: promotion });
-
         get().recalculate();
+
+        Toast.show({
+          type: "success",
+          text1: "Promotion Applied",
+          text2: `${promotion.name} has been applied to your cart`,
+        });
 
         return true;
       },

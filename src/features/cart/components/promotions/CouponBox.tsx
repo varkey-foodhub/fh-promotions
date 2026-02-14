@@ -4,15 +4,15 @@ import { useCartStore } from "@/src/store/cart.store";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  LayoutAnimation,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  UIManager,
-  View,
+    ActivityIndicator,
+    LayoutAnimation,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    UIManager,
+    View,
 } from "react-native";
 
 // Enable LayoutAnimation for Android
@@ -51,9 +51,12 @@ const CouponBox = () => {
 
       // Success Animation
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      applyPromotion(promo);
-      setCouponCode("");
-      setIsExpanded(false);
+      const applied = await applyPromotion(promo);
+      
+      if (applied) {
+        setCouponCode("");
+        setIsExpanded(false);
+      }
     } catch (err: any) {
       // Shake animation logic could go here
       setError("Invalid coupon code. Please try again.");
