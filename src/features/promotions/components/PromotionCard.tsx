@@ -1,8 +1,14 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { ThemedText } from "@/src/themed/ThemedText";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { type Promotion } from "../promotions.types";
 
 interface Props {
@@ -19,27 +25,65 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
     ? new Date(item.valid_to) < new Date()
     : false;
 
-  // Determine Colors based on status
-  const getStatusColor = () => {
-    if (isExpired) return colors.actionNegative;
-    if (!item.active) return colors.textSecondary;
-    return colors.actionPositive;
+  // Status Colors
+  const getStatusConfig = () => {
+    if (isExpired) {
+      return {
+        color: colors.actionNegative,
+        bgColor: colors.actionNegative + "15",
+        label: "EXPIRED",
+        icon: "time-outline" as const,
+      };
+    }
+    if (!item.active) {
+      return {
+        color: colors.textSecondary,
+        bgColor: colors.textSecondary + "15",
+        label: "INACTIVE",
+        icon: "pause-circle-outline" as const,
+      };
+    }
+    return {
+      color: colors.actionPositive,
+      bgColor: colors.actionPositive + "15",
+      label: "ACTIVE",
+      icon: "checkmark-circle" as const,
+    };
   };
-  const statusColor = getStatusColor();
+
+  const status = getStatusConfig();
 
   // Format Display Data
   const getDiscountDisplay = () => {
-    if (item.type === "PERCENTAGE") return `${item.percent_off}%`;
-    if (item.type === "FIXED") return `$${item.flat_amount}`;
-    return "Bundle";
+    if (item.type === "PERCENTAGE") {
+      return {
+        value: `${item.percent_off}%`,
+        label: "OFF",
+      };
+    }
+    if (item.type === "FIXED") {
+      return {
+        value: `₹${item.flat_amount}`,
+        label: "OFF",
+      };
+    }
+    return {
+      value: "Bundle",
+      label: "",
+    };
   };
 
-  const formattedDate = item.valid_to
-    ? new Date(item.valid_to).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      })
-    : "No Exp.";
+  const discount = getDiscountDisplay();
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "No Expiry";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   return (
     <View
@@ -47,62 +91,105 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
         styles.card,
         {
           backgroundColor: colors.backgroundElevated,
-          borderTopColor: statusColor,
           opacity: isExpired ? 0.7 : 1,
         },
       ]}
     >
-      {/* LEFT SIDE: Info & Meta */}
-      <View style={styles.leftSection}>
-        <ThemedText variant="subtitle" style={styles.title} numberOfLines={1}>
-          {item.name}
-        </ThemedText>
+      {/* Discount Badge - Left Side */}
+      <View style={[styles.discountBadge, { backgroundColor: status.bgColor }]}>
+        <Text style={[styles.discountValue, { color: status.color }]}>
+          {discount.value}
+        </Text>
+        {discount.label && (
+          <Text style={[styles.discountLabel, { color: status.color }]}>
+            {discount.label}
+          </Text>
+        )}
+      </View>
 
-        <View style={styles.metaRow}>
-          {/* Code Pill */}
-          <View
-            style={[
-              styles.codePill,
-              { backgroundColor: colors.backgroundPrimary },
-            ]}
+      {/* Main Content */}
+      <View style={styles.contentSection}>
+        {/* Title & Status Badge */}
+        <View style={styles.titleRow}>
+          <ThemedText
+            variant="subtitle"
+            style={styles.title}
+            numberOfLines={1}
           >
-            <Feather name="tag" size={10} color={colors.textSecondary} />
+            {item.name}
+          </ThemedText>
+          <View style={[styles.statusBadge, { backgroundColor: status.bgColor }]}>
+            <Ionicons name={status.icon} size={12} color={status.color} />
+            <Text style={[styles.statusText, { color: status.color }]}>
+              {status.label}
+            </Text>
+          </View>
+        </View>
+
+        {/* Code & Date Info */}
+        <View style={styles.infoRow}>
+          <View style={styles.codeContainer}>
+            <Feather
+              name="tag"
+              size={12}
+              color={colors.textSecondary}
+              style={{ opacity: 0.6 }}
+            />
             <Text style={[styles.codeText, { color: colors.textPrimary }]}>
               {item.code}
             </Text>
           </View>
 
-          {/* Date */}
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-            • {isExpired ? "Exp: " : "Ends: "}
-            {formattedDate}
-          </Text>
+          <View style={styles.dateContainer}>
+            <Ionicons
+              name="calendar-outline"
+              size={12}
+              color={colors.textSecondary}
+              style={{ opacity: 0.6 }}
+            />
+            <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+              {isExpired ? "Expired: " : "Ends: "}
+              {formatDate(item.valid_to)}
+            </Text>
+          </View>
         </View>
-      </View>
-
-      {/* RIGHT SIDE: Value & Actions */}
-      <View style={styles.rightSection}>
-        {/* Value Display */}
-        <Text style={[styles.valueText, { color: statusColor }]}>
-          {getDiscountDisplay()}
-        </Text>
 
         {/* Action Row */}
         <View style={styles.actionRow}>
-          <Switch
-            value={item.active}
-            onValueChange={(val) => onToggleActive(item.id, val)}
-            trackColor={{ false: colors.borderLight, true: colors.accentCO }}
-            thumbColor={"#fff"}
-            style={styles.compactSwitch}
-          />
+          <View style={styles.toggleContainer}>
+            <Text
+              style={[
+                styles.toggleLabel,
+                { color: colors.textSecondary },
+              ]}
+            >
+              {item.active ? "Active" : "Inactive"}
+            </Text>
+            <Switch
+              value={item.active}
+              onValueChange={(val) => onToggleActive(item.id, val)}
+              trackColor={{
+                false: colors.borderLight,
+                true: status.color + "40",
+              }}
+              thumbColor={item.active ? status.color : "#f4f3f4"}
+              ios_backgroundColor={colors.borderLight}
+            />
+          </View>
 
           <TouchableOpacity
             onPress={() => onDelete(item.id)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={styles.deleteBtn}
+            style={[
+              styles.deleteButton,
+              { backgroundColor: colors.actionNegative + "15" },
+            ]}
+            activeOpacity={0.7}
           >
-            <Feather name="trash-2" size={16} color={colors.textLight} />
+            <Feather
+              name="trash-2"
+              size={16}
+              color={colors.actionNegative}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -113,69 +200,112 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12, // Reduced padding
-    marginBottom: 10, // Reduced margin
-    borderRadius: 10,
-    borderTopWidth: 4, // The status strip
-    // Subtle shadow
+    borderRadius: 16,
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  leftSection: {
-    flex: 1,
-    paddingRight: 10,
+  discountBadge: {
+    width: 100,
     justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 12,
   },
-  rightSection: {
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 4,
+  discountValue: {
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
-  title: {
-    fontSize: 15,
+  discountLabel: {
+    fontSize: 11,
     fontWeight: "600",
-    marginBottom: 6,
+    marginTop: 2,
+    letterSpacing: 0.5,
   },
-  metaRow: {
+  contentSection: {
+    flex: 1,
+    padding: 16,
+    gap: 12,
+  },
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
   },
-  codePill: {
+  title: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  statusBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  codeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 6,
   },
   codeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
     fontFamily: "monospace",
   },
-  dateText: {
-    fontSize: 11,
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  valueText: {
-    fontSize: 18,
-    fontWeight: "800",
+  dateText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
   },
-  compactSwitch: {
-    transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }], // Make switch smaller
-    marginRight: -4, // Correct visual spacing after scaling
+  toggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  deleteBtn: {
-    padding: 4,
+  toggleLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

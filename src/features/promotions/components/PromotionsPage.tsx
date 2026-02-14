@@ -1,6 +1,7 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { ThemedText } from "@/src/themed/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -25,15 +26,17 @@ import {
   useTogglePromotion,
 } from "../promotions.queries";
 import { fuzzySearch } from "../utils/search";
+
 const PromotionsPage = () => {
   const colors = useThemeColor();
   const router = useRouter();
   const deleteMutation = useDeletePromotion();
   const toggleMutation = useTogglePromotion();
+
   // --- State ---
   const [expiredPage, setExpiredPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null); // "ACTIVE" | "EXPIRED" | null
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
 
   const expiredPageLimit = 5;
@@ -41,7 +44,6 @@ const PromotionsPage = () => {
 
   // --- Data Fetching ---
   const { data: activeData, isLoading: activeLoading } = useActivePromotions();
-
   const { data: expiredData, isLoading: expiredLoading } = useExpiredPromotions(
     expiredPage,
     expiredPageLimit,
@@ -50,13 +52,11 @@ const PromotionsPage = () => {
   const activePromos = activeData?.data || [];
   const expiredPromos = expiredData?.data || [];
 
-  // Combine for calculating available types dynamically
   const allPromos = useMemo(
     () => [...activePromos, ...expiredPromos],
     [activePromos, expiredPromos],
   );
 
-  // Derive available types from ALL data (so the dropdown isn't empty if we filter one side)
   const availableTypes = useMemo(() => {
     return Array.from(new Set(allPromos.map((p) => p.type)));
   }, [allPromos]);
@@ -65,12 +65,10 @@ const PromotionsPage = () => {
   const getFilteredList = (list: Promotion[]) => {
     let result = list;
 
-    // 1. Filter by Type
     if (typeFilter) {
       result = result.filter((p) => p.type === typeFilter);
     }
 
-    // 2. Filter by Search (Name or Code)
     if (debouncedSearchQuery.trim()) {
       result = fuzzySearch(debouncedSearchQuery, result, ["name", "code"]);
     }
@@ -78,7 +76,6 @@ const PromotionsPage = () => {
     return result;
   };
 
-  // Apply common filters (Type & Search) first
   const displayActive = useMemo(
     () => getFilteredList(activePromos),
     [activePromos, typeFilter, debouncedSearchQuery],
@@ -88,13 +85,11 @@ const PromotionsPage = () => {
     [expiredPromos, typeFilter, debouncedSearchQuery],
   );
 
-  // Determine visibility based on Status Filter
   const showActiveSection = statusFilter === null || statusFilter === "ACTIVE";
   const showExpiredSection =
     statusFilter === null || statusFilter === "EXPIRED";
 
   // --- Handlers ---
-
   const handleToggle = (id: number, val: boolean) => {
     toggleMutation.mutate({ id, active: val });
   };
@@ -109,61 +104,48 @@ const PromotionsPage = () => {
     },
     handleDelete: (id: number) => {
       deleteMutation.mutate(id);
-      console.log("Delete", id);
     },
   };
 
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.backgroundSecondary },
-      ]}
-      edges={["top"]}
-    >
-      <View style={styles.contentContainer}>
-        {/* --- Header --- */}
-        <View style={styles.headerContainer}>
-          <View>
-            <View
-              style={[
-                styles.header,
-                { backgroundColor: colors.backgroundSecondary },
-              ]}
-            >
-              <TouchableOpacity onPress={handler.navigateBack}>
-                <Ionicons
-                  name="arrow-back"
-                  size={24}
-                  color={colors.textPrimary}
-                />
-              </TouchableOpacity>
-              <ThemedText
-                variant="title"
-                style={{ fontSize: 20, color: "#471913" }}
-              >
-                BorgirKing
-              </ThemedText>
-              <View style={{ width: 24 }} />
-            </View>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Header with Gradient Background */}
+      <View style={styles.headerWrapper}>
+        <LinearGradient
+          colors={["#D32F2F", "#C62828"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          {/* Back Button & Title */}
+          <View style={styles.topBar}>
             <TouchableOpacity
-              activeOpacity={0.8}
-              style={[
-                styles.createButton,
-                { backgroundColor: colors.actionPrimary },
-              ]}
-              onPress={handler.navigateToCreatePromotions}
+              onPress={handler.navigateBack}
+              style={styles.backButton}
             >
-              <ThemedText
-                variant="subtitle"
-                style={{ color: colors.textInverse }}
-              >
-                + Create New Promotion
-              </ThemedText>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
+            <ThemedText variant="title" style={styles.headerTitle}>
+              BorgirKing
+            </ThemedText>
+            <View style={{ width: 24 }} />
           </View>
 
-          {/* --- Filter Bar --- */}
+          {/* Create Button */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.createButton}
+            onPress={handler.navigateToCreatePromotions}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#D32F2F" />
+            <ThemedText variant="subtitle" style={styles.createButtonText}>
+              Create New Promotion
+            </ThemedText>
+          </TouchableOpacity>
+        </LinearGradient>
+
+        {/* Filter Card - Outside gradient, overlapping */}
+        <View style={styles.filterCardContainer}>
           <View
             style={[
               styles.filterCard,
@@ -181,30 +163,74 @@ const PromotionsPage = () => {
             />
           </View>
         </View>
+      </View>
 
-        {/* --- Scrollable Content --- */}
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* 1. Active Section */}
-          {showActiveSection && (
-            <View style={styles.section}>
-              <ThemedText variant="caption" style={styles.sectionHeader}>
-                ACTIVE {activeLoading ? "..." : `(${displayActive.length})`}
-              </ThemedText>
+      {/* Scrollable Content */}
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.backgroundSecondary }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Active Section */}
+        {showActiveSection && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionHeaderLeft}>
+                <View
+                  style={[
+                    styles.sectionIndicator,
+                    { backgroundColor: colors.actionPositive },
+                  ]}
+                />
+                <ThemedText variant="caption" style={styles.sectionTitle}>
+                  ACTIVE PROMOTIONS
+                </ThemedText>
+              </View>
+              {!activeLoading && (
+                <View
+                  style={[
+                    styles.countBadge,
+                    { backgroundColor: colors.actionPositive + "20" },
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.countText,
+                      { color: colors.actionPositive },
+                    ]}
+                  >
+                    {displayActive.length}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
 
-              {activeLoading && <ActivityIndicator color={colors.accentCO} />}
+            {activeLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#D32F2F" />
+              </View>
+            )}
 
-              {!activeLoading && displayActive.length === 0 && (
+            {!activeLoading && displayActive.length === 0 && (
+              <View style={styles.emptyState}>
+                <Ionicons
+                  name="pricetag-outline"
+                  size={48}
+                  color={colors.textSecondary}
+                  style={{ opacity: 0.3 }}
+                />
                 <ThemedText style={styles.emptyText}>
                   {searchQuery || typeFilter
-                    ? "No active promotions match your filters."
-                    : "No active promotions found."}
+                    ? "No active promotions match your filters"
+                    : "No active promotions yet"}
                 </ThemedText>
-              )}
+                <ThemedText style={styles.emptySubtext}>
+                  {!searchQuery && !typeFilter && "Create one to get started"}
+                </ThemedText>
+              </View>
+            )}
 
+            <View style={styles.cardsContainer}>
               {displayActive.map((item) => (
                 <PromotionCard
                   key={item.id}
@@ -214,25 +240,66 @@ const PromotionsPage = () => {
                 />
               ))}
             </View>
-          )}
+          </View>
+        )}
 
-          {/* 2. Expired Section */}
-          {showExpiredSection && (
-            <View style={styles.section}>
-              <ThemedText variant="caption" style={styles.sectionHeader}>
-                EXPIRED {expiredLoading ? "..." : `(${displayExpired.length})`}
-              </ThemedText>
+        {/* Expired Section */}
+        {showExpiredSection && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionHeaderLeft}>
+                <View
+                  style={[
+                    styles.sectionIndicator,
+                    { backgroundColor: colors.textSecondary },
+                  ]}
+                />
+                <ThemedText variant="caption" style={styles.sectionTitle}>
+                  EXPIRED PROMOTIONS
+                </ThemedText>
+              </View>
+              {!expiredLoading && (
+                <View
+                  style={[
+                    styles.countBadge,
+                    { backgroundColor: colors.textSecondary + "20" },
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.countText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {displayExpired.length}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
 
-              {expiredLoading && <ActivityIndicator color={colors.accentCO} />}
+            {expiredLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.textSecondary} />
+              </View>
+            )}
 
-              {!expiredLoading && displayExpired.length === 0 && (
+            {!expiredLoading && displayExpired.length === 0 && (
+              <View style={styles.emptyState}>
+                <Ionicons
+                  name="time-outline"
+                  size={48}
+                  color={colors.textSecondary}
+                  style={{ opacity: 0.3 }}
+                />
                 <ThemedText style={styles.emptyText}>
                   {searchQuery || typeFilter
-                    ? "No expired promotions match your filters."
-                    : "No expired promotions found."}
+                    ? "No expired promotions match your filters"
+                    : "No expired promotions"}
                 </ThemedText>
-              )}
+              </View>
+            )}
 
+            <View style={styles.cardsContainer}>
               {displayExpired.map((item) => (
                 <PromotionCard
                   key={item.id}
@@ -242,11 +309,11 @@ const PromotionsPage = () => {
                 />
               ))}
             </View>
-          )}
+          </View>
+        )}
 
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      </View>
+        <View style={{ height: 60 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -256,63 +323,136 @@ export default PromotionsPage;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F5F5F5",
   },
-  header: {
+  headerWrapper: {
+    position: "relative",
+
+    
+  },
+  headerGradient: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 200, // Extra space for overlapping filter card
+  },
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 32,
   },
-  contentContainer: {
-    flex: 1,
-  },
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
-    gap: 12,
-  },
-  titleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  backButton: {
+    width: 40,
+    height: 40,
     alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
-  pageTitle: {
+  headerTitle: {
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
   },
   createButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 20,
-    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  createButtonText: {
+    color: "#D32F2F",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  filterCardContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    transform: [{ translateY: 40 }], // Overlap effect
+    marginBottom:40
   },
   filterCard: {
-    padding: 12,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom:30
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 60, // Account for overlapping filter card
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 32,
   },
-  sectionHeader: {
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  sectionHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  sectionIndicator: {
+    width: 4,
+    height: 20,
+    borderRadius: 2,
+  },
+  sectionTitle: {
+    fontSize: 13,
     fontWeight: "700",
-    opacity: 0.5,
-    marginBottom: 8,
-    marginTop: 8,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
+    opacity: 0.7,
+  },
+  countBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  cardsContainer: {
+    gap: 12,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  emptyState: {
+    paddingVertical: 48,
+    alignItems: "center",
+    gap: 8,
   },
   emptyText: {
-    opacity: 0.5,
-    fontStyle: "italic",
+    fontSize: 15,
+    opacity: 0.6,
+    textAlign: "center",
+    marginTop: 12,
+  },
+  emptySubtext: {
     fontSize: 13,
-    marginBottom: 10,
+    opacity: 0.4,
+    textAlign: "center",
   },
 });
