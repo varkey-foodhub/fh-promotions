@@ -1,7 +1,7 @@
+import { validate } from "@/src/features/promotions/promotions.conditions.validator";
 import { useDiscounts } from "@/src/features/promotions/promotions.queries";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { useCartStore } from "@/src/store/cart.store";
-import { validate } from "@/src/features/promotions/promotions.conditions.validator";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
 import {
