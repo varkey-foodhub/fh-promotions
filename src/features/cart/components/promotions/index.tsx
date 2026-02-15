@@ -8,7 +8,7 @@ const Promotions = () => {
   const colors = useThemeColor();
 
   return (
-    <View style={styles.container}>
+    <View>
       <View
         style={[
           styles.sectionCard,
@@ -33,11 +33,8 @@ const Promotions = () => {
 export default Promotions;
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-  },
   sectionCard: {
-    padding: 16,
+    padding: 5,
     borderRadius: 14,
   },
 });

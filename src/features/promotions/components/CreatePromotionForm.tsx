@@ -68,7 +68,7 @@ const CreatePromotionForm = () => {
       type: data.type,
       application_method: data.application_method,
       valid_from: data.valid_from,
-      valid_to: data.valid_to,
+      ...(data.valid_to && data.valid_to.trim() !== "" && { valid_to: data.valid_to }),
       active: data.active,
       ...(data.type === "PERCENTAGE"
         ? { percent_off: Number(data.percent_off) }

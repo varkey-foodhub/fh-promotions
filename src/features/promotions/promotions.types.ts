@@ -51,7 +51,7 @@ export type CreatePromotionPayload = {
   percent_off?: number;
   flat_amount?: number;
   valid_from: string;
-  valid_to: string;
+  valid_to?: string;
   active: boolean;
   conditions?: {
     required_item_ids?: number[];
