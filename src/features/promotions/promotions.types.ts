@@ -31,7 +31,8 @@ export interface ExpiredPromotionsResponse {
 export type FormValues = {
   name: string;
   code: string;
-  type: "PERCENTAGE" | "FIXED";
+  type: "PERCENTAGE" | "FIXED" | "BUNDLE";
+  promotion_bundle_id?: number | null;
   application_method: "CODE" | "DISCOUNT";
   percent_off?: string;
   flat_amount?: string;
@@ -47,7 +48,8 @@ export type FormValues = {
 export type CreatePromotionPayload = {
   name: string;
   code: string;
-  type: "PERCENTAGE" | "FIXED";
+  type: "PERCENTAGE" | "FIXED" | "BUNDLE";
+  promotion_bundle_id?: number;
   application_method: "CODE" | "DISCOUNT";
   percent_off?: number;
   flat_amount?: number;
@@ -65,4 +67,11 @@ export type Bundle = {
   name: string;
   price: number;
   quantity: number;
+  out_of_stock?: boolean;
+};
+
+export type BundleModel = {
+  id: number;
+  name: string;
+  items: Bundle[];
 };

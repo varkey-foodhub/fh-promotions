@@ -3,6 +3,7 @@ import axios from "axios";
 import {
   ActivePromotionsResponse,
   Bundle,
+  BundleModel,
   CreatePromotionPayload,
   ExpiredPromotionsResponse,
   Promotion,
@@ -163,12 +164,32 @@ export const fetchBundle = async (id: number): Promise<Bundle[]> => {
   try {
     const response = await axiosInstance.get(`/promotions/bundle/${id}`);
     console.log(response.data.data);
-    return response.data.data;
+    return response.data.data.items;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || "Invalid bundle id");
     }
 
+    throw new Error("Unexpected error occurred");
+  }
+};
+
+export const fetchBundles = async (): Promise<BundleModel[]> => {
+  try {
+    const response = await axiosInstance.get(`/promotions/bundles`);
+    return response.data.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error("Bundles API Error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch bundles",
+      );
+    }
+    console.error("Unexpected Error:", error);
     throw new Error("Unexpected error occurred");
   }
 };

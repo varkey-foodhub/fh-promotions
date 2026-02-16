@@ -9,6 +9,7 @@ import {
   deletePromotion,
   fetchActivePromotions,
   fetchBundle,
+  fetchBundles,
   fetchCoupon,
   fetchDiscounts,
   fetchExpiredPromotions,
@@ -235,5 +236,13 @@ export const useFetchBundle = () => {
     onError: (error: Error) => {
       console.error("Bundle Fetch Error:", error.message);
     },
+  });
+};
+
+export const useBundles = () => {
+  return useQuery({
+    queryKey: ["promotions", "bundles"],
+    queryFn: fetchBundles,
+    staleTime: 1000 * 60 * 2,
   });
 };

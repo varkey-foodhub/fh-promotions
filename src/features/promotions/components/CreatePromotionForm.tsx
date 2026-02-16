@@ -8,7 +8,7 @@ import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCreatePromotion } from "../promotions.queries";
+import { useBundles, useCreatePromotion } from "../promotions.queries";
 import { CreatePromotionPayload, FormValues } from "../promotions.types";
 import { ControlledDatePicker } from "./form/ControlledDatePicker";
 import { ControlledInput } from "./form/ControlledInput";
@@ -50,6 +50,8 @@ const CreatePromotionForm = () => {
 
   const selectedType = watch("type");
   const selectedItemIds = watch("conditions.required_item_ids") || [];
+  const selectedBundleId = watch("promotion_bundle_id");
+  const { data: bundles, isLoading: bundlesLoading } = useBundles();
 
   const getSelectedItems = () => {
     if (!menuItems || selectedItemIds.length === 0) return [];
@@ -68,21 +70,35 @@ const CreatePromotionForm = () => {
       type: data.type,
       application_method: data.application_method,
       valid_from: data.valid_from,
-      ...(data.valid_to && data.valid_to.trim() !== "" && { valid_to: data.valid_to }),
+      ...(data.valid_to &&
+        data.valid_to.trim() !== "" && { valid_to: data.valid_to }),
       active: data.active,
       ...(data.type === "PERCENTAGE"
         ? { percent_off: Number(data.percent_off) }
-        : { flat_amount: Number(data.flat_amount) }),
+        : data.type === "FIXED"
+          ? { flat_amount: Number(data.flat_amount) }
+          : {}),
+      ...(data.type === "BUNDLE" && data.promotion_bundle_id
+        ? { promotion_bundle_id: Number(data.promotion_bundle_id) }
+        : {}),
     };
 
     // Add conditions if any are specified
-    const hasRequiredItems = data.conditions?.required_item_ids && data.conditions.required_item_ids.length > 0;
-    const hasMinOrderValue = data.conditions?.min_order_value && data.conditions.min_order_value.trim() !== "";
-    
+    const hasRequiredItems =
+      data.conditions?.required_item_ids &&
+      data.conditions.required_item_ids.length > 0;
+    const hasMinOrderValue =
+      data.conditions?.min_order_value &&
+      data.conditions.min_order_value.trim() !== "";
+
     if (hasRequiredItems || hasMinOrderValue) {
       payload.conditions = {
-        ...(hasRequiredItems && { required_item_ids: data.conditions!.required_item_ids }),
-        ...(hasMinOrderValue && { min_order_value: Number(data.conditions!.min_order_value) }),
+        ...(hasRequiredItems && {
+          required_item_ids: data.conditions!.required_item_ids,
+        }),
+        ...(hasMinOrderValue && {
+          min_order_value: Number(data.conditions!.min_order_value),
+        }),
       };
     }
 
@@ -188,6 +204,7 @@ const CreatePromotionForm = () => {
                   >
                     <Picker.Item label="Percentage (%)" value="PERCENTAGE" />
                     <Picker.Item label="Fixed Amount (₹)" value="FIXED" />
+                    <Picker.Item label="Bundle" value="BUNDLE" />
                   </Picker>
                 </View>
               )}
@@ -218,7 +235,7 @@ const CreatePromotionForm = () => {
                     keyboardType: "numeric",
                   }}
                 />
-              ) : (
+              ) : selectedType === "FIXED" ? (
                 <ControlledInput<FormValues>
                   name="flat_amount"
                   control={control}
@@ -236,6 +253,90 @@ const CreatePromotionForm = () => {
                     keyboardType: "numeric",
                   }}
                 />
+              ) : null}
+
+              {/* Bundle selection UI */}
+              {selectedType === "BUNDLE" && (
+                <View style={{ marginTop: 8, gap: 8 }}>
+                  <CreatePromotionFieldTitle text="Select Bundle" />
+                  <Controller
+                    control={control}
+                    name="promotion_bundle_id"
+                    render={({ field: { onChange, value } }) => (
+                      <View
+                        style={[
+                          styles.dropdownContainer,
+                          { borderColor: colors.borderLight },
+                        ]}
+                      >
+                        <Picker
+                          selectedValue={value ?? null}
+                          onValueChange={(v) => onChange(v)}
+                          dropdownIconColor={colors.textPrimary}
+                          style={{ color: colors.textPrimary }}
+                        >
+                          <Picker.Item
+                            label={
+                              bundlesLoading ? "Loading..." : "Select bundle"
+                            }
+                            value={null}
+                          />
+                          {bundles &&
+                            bundles.map((b: any) => (
+                              <Picker.Item
+                                key={b.id}
+                                label={b.name}
+                                value={b.id}
+                              />
+                            ))}
+                        </Picker>
+                      </View>
+                    )}
+                  />
+
+                  {selectedBundleId && bundles && (
+                    <View style={styles.selectedItemsList}>
+                      {bundles
+                        .find((b: any) => b.id === selectedBundleId)
+                        ?.items.map((it: any) => (
+                          <View
+                            key={it.item_id}
+                            style={[
+                              styles.selectedItemChip,
+                              { backgroundColor: colors.backgroundElevated },
+                            ]}
+                          >
+                            <View style={styles.selectedItemInfo}>
+                              <ThemedText style={styles.selectedItemName}>
+                                {it.name}
+                              </ThemedText>
+                              <ThemedText style={styles.selectedItemPrice}>
+                                ₹{it.price} • Qty: {it.quantity}
+                              </ThemedText>
+                            </View>
+                          </View>
+                        ))}
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    onPress={() => router.push("/bundles/create")}
+                    style={[
+                      styles.createBundleButton,
+                      { borderColor: colors.borderLight },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.createBundleText,
+                        { color: colors.textPrimary },
+                      ]}
+                    >
+                      Create Bundle
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           </View>
@@ -244,7 +345,7 @@ const CreatePromotionForm = () => {
           <View style={styles.section}>
             <View style={styles.sectionDivider} />
             <CreatePromotionFieldTitle text="Validity Period" />
-            
+
             <ControlledDatePicker<FormValues>
               name="valid_from"
               control={control}
@@ -258,7 +359,7 @@ const CreatePromotionForm = () => {
               control={control}
               label="End Date (Optional)"
             />
-            
+
             <ThemedText style={styles.helperText}>
               Leave end date empty for no expiration
             </ThemedText>
@@ -268,7 +369,7 @@ const CreatePromotionForm = () => {
           <View style={styles.section}>
             <View style={styles.sectionDivider} />
             <CreatePromotionFieldTitle text="Conditions (Optional)" />
-            
+
             {/* Required Items */}
             <View>
               <ThemedText style={styles.label}>Required Items</ThemedText>
@@ -376,9 +477,10 @@ const CreatePromotionForm = () => {
           style={[
             styles.submitButton,
             {
-              backgroundColor: isValid && !createMutation.isPending
-                ? "#D32F2F"
-                : colors.borderLight,
+              backgroundColor:
+                isValid && !createMutation.isPending
+                  ? "#D32F2F"
+                  : colors.borderLight,
             },
           ]}
           activeOpacity={0.8}
@@ -387,9 +489,10 @@ const CreatePromotionForm = () => {
             style={[
               styles.buttonText,
               {
-                color: isValid && !createMutation.isPending
-                  ? "white"
-                  : colors.textSecondary,
+                color:
+                  isValid && !createMutation.isPending
+                    ? "white"
+                    : colors.textSecondary,
               },
             ]}
           >
@@ -467,7 +570,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    marginBottom:30
+    marginBottom: 30,
   },
   buttonText: {
     fontWeight: "700",
@@ -522,5 +625,16 @@ const styles = StyleSheet.create({
   removeButton: {
     padding: 4,
     marginLeft: 8,
+  },
+  createBundleButton: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  createBundleText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
