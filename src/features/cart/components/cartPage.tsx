@@ -64,7 +64,9 @@ const CartPage = () => {
             <View>
               {/* List of Items */}
               {items.map((item) => (
-                <View key={item.id}>
+                <View
+                  key={`${item.id}-${item.isPromotional ? "promo" : "paid"}`}
+                >
                   <CartItemRow item={item} />
                 </View>
               ))}

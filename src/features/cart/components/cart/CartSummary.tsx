@@ -52,7 +52,10 @@ const CartSummary = () => {
         {/* --- ITEMS LIST --- */}
         <View style={styles.itemsContainer}>
           {items.map((item) => (
-            <View key={item.id} style={styles.itemRow}>
+            <View
+              key={`${item.id}-${item.isPromotional ? "promo" : "paid"}`}
+              style={styles.itemRow}
+            >
               {/* QTY & NAME */}
               <View style={styles.itemLeft}>
                 <Text style={[styles.qtyText, { color: colors.textPrimary }]}>

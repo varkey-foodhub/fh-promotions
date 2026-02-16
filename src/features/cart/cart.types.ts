@@ -7,6 +7,8 @@ export type CartItem = {
   price: number;
   image?: string;
   quantity: number;
+  isPromotional?: boolean; // 🔥 New flag to identify free items
+  out_of_stock: boolean;
 };
 
 // src/features/cart/cart.types.ts

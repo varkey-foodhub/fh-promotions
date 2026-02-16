@@ -2,13 +2,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { CartItem } from "../features/cart/cart.types";
 import { MenuItem } from "../features/menu/menu.types";
 import { validate } from "../features/promotions/promotions.conditions.validator";
 import { Bundle, Promotion } from "../features/promotions/promotions.types";
-
-export type CartItem = MenuItem & {
-  quantity: number;
-};
+/**
+ * Product type stored in cart
+ */
 
 interface CartState {
   items: CartItem[];
@@ -22,9 +22,9 @@ interface CartState {
   total: number;
 
   addItem: (item: MenuItem, qty?: number) => void;
-  removeItem: (id: number) => void;
-  increment: (id: number) => void;
-  decrement: (id: number) => void;
+  removeItem: (id: number, isPromotional?: boolean) => void;
+  increment: (id: number, isPromotional?: boolean) => void;
+  decrement: (id: number, isPromotional?: boolean) => void;
   clearCart: () => void;
 
   applyPromotion: (
@@ -35,6 +35,7 @@ interface CartState {
 
   recalculate: () => void;
 }
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -50,58 +51,95 @@ export const useCartStore = create<CartState>()(
       // INTERNAL CALCULATOR
       // ----------------------------
 
-      recalculate: () => {
-        const { items, appliedPromotion } = get();
+      recalculate: async () => {
+        const { items, appliedPromotion, removePromotion } = get();
 
+        // 1. Basic Calculations
         const totalItems = items.reduce((acc, i) => acc + i.quantity, 0);
-
-        // ✅ Force 2 decimal precision
         const subtotalRaw = items.reduce(
           (acc, i) => acc + i.quantity * i.price,
           0,
         );
-
         const subtotal = Number(subtotalRaw.toFixed(2));
 
-        if (subtotal === 0) {
+        // ----------------------------
+        // 🔥 HARD BUNDLE GUARD
+        // ----------------------------
+        if (appliedPromotion?.type === "BUNDLE") {
+          const hasPaidItems = items.some((i) => !i.isPromotional);
+
+          // If no paid items remain → remove promotion
+          if (!hasPaidItems) {
+            removePromotion();
+            Toast.show({
+              type: "info",
+              text1: "Promotion Removed",
+              text2: "Required items no longer in cart",
+            });
+            return;
+          }
+        }
+
+        // 2. Validate existing promotion against current cart state
+        if (appliedPromotion) {
+          const order = {
+            items: items.map((i) => ({
+              id: i.id,
+              quantity: i.quantity,
+              price: i.price,
+            })),
+            total: subtotal,
+          };
+
+          const validationResult = await validate(appliedPromotion, order);
+
+          // 🔥 QOL: If the cart no longer meets coupon conditions, strip it
+          if (!validationResult.valid) {
+            removePromotion();
+            Toast.show({
+              type: "info",
+              text1: "Promotion Removed",
+              text2: "Cart no longer meets the required conditions",
+            });
+            return; // removePromotion calls recalculate again, so we exit here
+          }
+        }
+
+        // 3. Reset state if cart is empty
+        if (subtotal === 0 && items.length === 0) {
           set({
             appliedPromotion: null,
             discountAmount: 0,
-            totalItems,
+            totalItems: 0,
             subtotal: 0,
             total: 0,
           });
           return;
         }
 
+        // 4. Calculate Discounts
         let discountAmount = 0;
-
         if (appliedPromotion) {
           if (
             appliedPromotion.type === "PERCENTAGE" &&
             appliedPromotion.percent_off
           ) {
             discountAmount = (subtotal * appliedPromotion.percent_off) / 100;
-          }
-
-          if (
+          } else if (
             appliedPromotion.type === "FIXED" &&
             appliedPromotion.flat_amount
           ) {
-            discountAmount = appliedPromotion.flat_amount;
+            discountAmount = Number(appliedPromotion.flat_amount);
           }
         }
 
-        // ✅ Clamp + round
         discountAmount = Math.min(discountAmount, subtotal);
-        discountAmount = Number(discountAmount.toFixed(2));
-
         const total = Number((subtotal - discountAmount).toFixed(2));
 
         set({
           totalItems,
           subtotal,
-          discountAmount,
+          discountAmount: Number(discountAmount.toFixed(2)),
           total,
         });
       },
@@ -110,50 +148,60 @@ export const useCartStore = create<CartState>()(
       // CART ACTIONS
       // ----------------------------
 
-      addItem: (item, qty = 1) => {
+      // ----------------------------
+      // CART ACTIONS (UPDATED TO ASYNC)
+      // ----------------------------
+      addItem: async (item, qty = 1) => {
         if (item.out_of_stock) return;
-
         set((state) => {
-          const existing = state.items.find((i) => i.id === item.id);
-
+          const existing = state.items.find(
+            (i) => i.id === item.id && !i.isPromotional,
+          );
           const updatedItems = existing
             ? state.items.map((i) =>
-                i.id === item.id ? { ...i, quantity: i.quantity + qty } : i,
+                i.id === item.id && !i.isPromotional
+                  ? { ...i, quantity: i.quantity + qty }
+                  : i,
               )
-            : [...state.items, { ...item, quantity: qty }];
-
+            : [
+                ...state.items,
+                { ...item, quantity: qty, isPromotional: false },
+              ];
           return { items: updatedItems };
         });
-
-        get().recalculate();
+        await get().recalculate();
       },
 
-      removeItem: (id) => {
+      removeItem: async (id, isPromotional = false) => {
         set((state) => ({
-          items: state.items.filter((i) => i.id !== id),
-        }));
-
-        get().recalculate();
-      },
-
-      increment: (id) => {
-        set((state) => ({
-          items: state.items.map((i) =>
-            i.id === id ? { ...i, quantity: i.quantity + 1 } : i,
+          items: state.items.filter(
+            (i) => !(i.id === id && i.isPromotional === isPromotional),
           ),
         }));
-
-        get().recalculate();
+        await get().recalculate();
+      },
+      increment: async (id, isPromotional = false) => {
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.id === id && i.isPromotional === isPromotional
+              ? { ...i, quantity: i.quantity + 1 }
+              : i,
+          ),
+        }));
+        await get().recalculate();
       },
 
-      decrement: (id) => {
+      decrement: async (id, isPromotional = false) => {
         set((state) => ({
           items: state.items
-            .map((i) => (i.id === id ? { ...i, quantity: i.quantity - 1 } : i))
+            .map((i) =>
+              i.id === id && i.isPromotional === isPromotional
+                ? { ...i, quantity: i.quantity - 1 }
+                : i,
+            )
             .filter((i) => i.quantity > 0),
         }));
-
-        get().recalculate();
+        await get().recalculate();
       },
 
       clearCart: () => {
@@ -207,7 +255,7 @@ export const useCartStore = create<CartState>()(
         }
 
         // ----------------------------
-        // 🔥 BUNDLE LOGIC (UPDATED)
+        // 🔥 BUNDLE LOGIC (IMPROVED)
         // ----------------------------
         if (promotion.type === "BUNDLE") {
           if (!resolvedBundleItems || resolvedBundleItems.length === 0) {
@@ -223,19 +271,21 @@ export const useCartStore = create<CartState>()(
             const updatedItems = [...state.items];
 
             resolvedBundleItems.forEach((bundleItem) => {
-              const existing = updatedItems.find(
-                (i) => i.id === bundleItem.item_id,
+              // Look for an existing PROMOTIONAL version of this item
+              const existingPromo = updatedItems.find(
+                (i) => i.id === bundleItem.item_id && i.isPromotional === true,
               );
 
-              if (existing) {
-                existing.quantity += bundleItem.quantity;
+              if (existingPromo) {
+                existingPromo.quantity += bundleItem.quantity;
               } else {
                 updatedItems.push({
                   id: bundleItem.item_id,
                   name: bundleItem.name,
-                  price: 0, // bundle reward = free
+                  price: 0, // 🔥 Reward items are free
                   out_of_stock: false,
                   quantity: bundleItem.quantity,
+                  isPromotional: true, // 🔥 Marks it as a free reward
                 });
               }
             });
@@ -245,7 +295,6 @@ export const useCartStore = create<CartState>()(
         }
 
         set({ appliedPromotion: promotion });
-
         get().recalculate();
 
         Toast.show({
@@ -258,8 +307,22 @@ export const useCartStore = create<CartState>()(
       },
 
       removePromotion: () => {
-        set({ appliedPromotion: null });
-        get().recalculate();
+        set((state) => ({
+          appliedPromotion: null,
+          // 🔥 Purge all free items when promotion is removed
+          items: state.items.filter((item) => !item.isPromotional),
+        }));
+        // We use a sync version or ensure this doesn't loop
+        const { items } = get();
+        const subtotal = items.reduce(
+          (acc, i) => acc + i.quantity * i.price,
+          0,
+        );
+        set({
+          subtotal: Number(subtotal.toFixed(2)),
+          discountAmount: 0,
+          total: Number(subtotal.toFixed(2)),
+        });
       },
     }),
     {
