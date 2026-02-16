@@ -5,12 +5,12 @@ import { useCartStore } from "@/src/store/cart.store";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Dimensions,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -99,7 +99,7 @@ const DiscountSlider = () => {
           const isApplied = appliedPromotion?.id === item.id;
           const validation = validationStatus[item.id];
           const isValid = validation?.valid !== false;
-          const errorMessage = validation?.error 
+          const errorMessage = validation?.error
             ? formatErrorMessage(validation.error)
             : undefined;
 
@@ -117,16 +117,16 @@ const DiscountSlider = () => {
               <View style={styles.cardContent}>
                 {/* Left Section */}
                 <View style={styles.leftContent}>
-                  <View 
+                  <View
                     style={[
                       styles.iconCircle,
-                      { backgroundColor: !isValid ? "#F5F5F5" : "#FFF5F5" }
+                      { backgroundColor: !isValid ? "#F5F5F5" : "#FFF5F5" },
                     ]}
                   >
-                    <Feather 
-                      name="tag" 
-                      size={16} 
-                      color={!isValid ? "#999" : "#FF4444"} 
+                    <Feather
+                      name="tag"
+                      size={16}
+                      color={!isValid ? "#999" : "#FF4444"}
                     />
                   </View>
 
@@ -134,10 +134,10 @@ const DiscountSlider = () => {
                     <Text
                       style={[
                         styles.discountValue,
-                        { 
-                          color: !isValid 
-                            ? colors.textSecondary 
-                            : colors.textPrimary 
+                        {
+                          color: !isValid
+                            ? colors.textSecondary
+                            : colors.textPrimary,
                         },
                       ]}
                     >
@@ -167,14 +167,13 @@ const DiscountSlider = () => {
                 {/* Apply Button */}
                 <TouchableOpacity
                   disabled={isApplied || !isValid}
-                  onPress={async () => await applyPromotion(item)}
+                  onPress={async () => await applyPromotion(item, [])}
                   style={[
                     styles.applyBtn,
                     {
-                      backgroundColor: 
-                        isApplied
-                          ? colors.borderLight
-                          : !isValid
+                      backgroundColor: isApplied
+                        ? colors.borderLight
+                        : !isValid
                           ? "#E0E0E0"
                           : colors.textPrimary,
                     },
@@ -184,10 +183,9 @@ const DiscountSlider = () => {
                     style={[
                       styles.applyBtnText,
                       {
-                        color: 
-                          isApplied
-                            ? colors.textSecondary
-                            : !isValid
+                        color: isApplied
+                          ? colors.textSecondary
+                          : !isValid
                             ? "#999"
                             : colors.textInverse,
                       },
