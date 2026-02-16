@@ -1,18 +1,21 @@
-import { useValidateCoupon } from "@/src/features/promotions/promotions.queries";
+import {
+  useFetchBundle,
+  useValidateCoupon,
+} from "@/src/features/promotions/promotions.queries";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { useCartStore } from "@/src/store/cart.store";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    LayoutAnimation,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    UIManager,
-    View,
+  ActivityIndicator,
+  LayoutAnimation,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  UIManager,
+  View,
 } from "react-native";
 
 // Enable LayoutAnimation for Android
@@ -30,6 +33,7 @@ const CouponBox = () => {
   const appliedPromotion = useCartStore((s) => s.appliedPromotion);
 
   const { mutateAsync, isPending } = useValidateCoupon();
+  const { mutateAsync: fetchBundleAsync } = useFetchBundle();
 
   const [couponCode, setCouponCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +46,7 @@ const CouponBox = () => {
 
     try {
       setError(null);
+
       const promo = await mutateAsync(couponCode.trim());
 
       if (!promo.active) {
@@ -49,16 +54,29 @@ const CouponBox = () => {
         return;
       }
 
-      // Success Animation
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      const applied = await applyPromotion(promo);
-      
-      if (applied) {
-        setCouponCode("");
-        setIsExpanded(false);
+      // 🔥 If bundle type → fetch bundle items first
+      if (promo.type === "BUNDLE") {
+        if (!promo.promotion_bundle_id) {
+          setError("Invalid bundle configuration.");
+          return;
+        }
+
+        try {
+          const bundleItems = await fetchBundleAsync(promo.promotion_bundle_id);
+          const applied = await applyPromotion(promo, bundleItems);
+
+          if (applied) {
+            setCouponCode("");
+            setIsExpanded(false);
+          }
+        } catch {
+          setError("Failed to load bundle items.");
+          return;
+        }
       }
+
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     } catch (err: any) {
-      // Shake animation logic could go here
       setError("Invalid coupon code. Please try again.");
     }
   };

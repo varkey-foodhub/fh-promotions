@@ -2,6 +2,7 @@ import { axiosInstance } from "@/src/lib/axios";
 import axios from "axios";
 import {
   ActivePromotionsResponse,
+  Bundle,
   CreatePromotionPayload,
   ExpiredPromotionsResponse,
   Promotion,
@@ -152,6 +153,20 @@ export const fetchCoupon = async (code: string): Promise<Promotion> => {
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || "Invalid coupon");
+    }
+
+    throw new Error("Unexpected error occurred");
+  }
+};
+
+export const fetchBundle = async (id: number): Promise<Bundle[]> => {
+  try {
+    const response = await axiosInstance.get(`/promotions/bundle/${id}`);
+    console.log(response.data.data);
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || "Invalid bundle id");
     }
 
     throw new Error("Unexpected error occurred");

@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { MenuItem } from "../features/menu/menu.types";
 import { validate } from "../features/promotions/promotions.conditions.validator";
-import { Promotion } from "../features/promotions/promotions.types";
+import { Bundle, Promotion } from "../features/promotions/promotions.types";
 
 export type CartItem = MenuItem & {
   quantity: number;
@@ -27,7 +27,10 @@ interface CartState {
   decrement: (id: number) => void;
   clearCart: () => void;
 
-  applyPromotion: (promotion: Promotion) => Promise<boolean>;
+  applyPromotion: (
+    promotion: Promotion,
+    resolvedBundleItems: Bundle[],
+  ) => Promise<boolean>;
   removePromotion: () => void;
 
   recalculate: () => void;
@@ -168,31 +171,26 @@ export const useCartStore = create<CartState>()(
       // PROMOTION LOGIC
       // ----------------------------
 
-      applyPromotion: async (promotion) => {
+      applyPromotion: async (promotion, resolvedBundleItems?: Bundle[]) => {
         const now = new Date();
 
-        // Check if promotion is active and within valid dates
         const isValid =
           promotion.active &&
           new Date(promotion.valid_from) <= now &&
-          new Date(promotion.valid_to) >= now;
+          (!promotion.valid_to || new Date(promotion.valid_to) >= now);
 
         if (!isValid) {
-          Toast.show({
-            type: "error",
-            text1: "Promotion Expired",
-            text2: "This promotion is no longer valid",
-          });
+          Toast.show({ type: "error", text1: "Promotion Expired" });
           return false;
         }
 
-        // Validate conditions if they exist
         const { items, subtotal } = get();
+
         const order = {
-          items: items.map((item) => ({
-            id: item.id,
-            quantity: item.quantity,
-            price: item.price,
+          items: items.map((i) => ({
+            id: i.id,
+            quantity: i.quantity,
+            price: i.price,
           })),
           total: subtotal,
         };
@@ -202,20 +200,58 @@ export const useCartStore = create<CartState>()(
         if (!validationResult.valid) {
           Toast.show({
             type: "error",
-            text1: "Cannot Apply Promotion",
+            text1: "Cannot Apply",
             text2: validationResult.error,
           });
           return false;
         }
 
-        // All validations passed - apply the promotion
+        // ----------------------------
+        // 🔥 BUNDLE LOGIC (UPDATED)
+        // ----------------------------
+        if (promotion.type === "BUNDLE") {
+          if (!resolvedBundleItems || resolvedBundleItems.length === 0) {
+            Toast.show({
+              type: "error",
+              text1: "Bundle Error",
+              text2: "Bundle items missing",
+            });
+            return false;
+          }
+
+          set((state) => {
+            const updatedItems = [...state.items];
+
+            resolvedBundleItems.forEach((bundleItem) => {
+              const existing = updatedItems.find(
+                (i) => i.id === bundleItem.item_id,
+              );
+
+              if (existing) {
+                existing.quantity += bundleItem.quantity;
+              } else {
+                updatedItems.push({
+                  id: bundleItem.item_id,
+                  name: bundleItem.name,
+                  price: 0, // bundle reward = free
+                  out_of_stock: false,
+                  quantity: bundleItem.quantity,
+                });
+              }
+            });
+
+            return { items: updatedItems };
+          });
+        }
+
         set({ appliedPromotion: promotion });
+
         get().recalculate();
 
         Toast.show({
           type: "success",
           text1: "Promotion Applied",
-          text2: `${promotion.name} has been applied to your cart`,
+          text2: `${promotion.name} added to cart`,
         });
 
         return true;

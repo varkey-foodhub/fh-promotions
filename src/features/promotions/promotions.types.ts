@@ -4,6 +4,7 @@ export interface Promotion {
   code: string;
   type: "PERCENTAGE" | "FIXED" | "BUNDLE";
   percent_off?: number;
+  promotion_bundle_id?: number;
   flat_amount?: number;
   active: boolean;
   valid_from: string;
@@ -57,4 +58,11 @@ export type CreatePromotionPayload = {
     required_item_ids?: number[];
     min_order_value?: number;
   };
+};
+
+export type Bundle = {
+  item_id: number;
+  name: string;
+  price: number;
+  quantity: number;
 };

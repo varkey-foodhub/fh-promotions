@@ -8,6 +8,7 @@ import {
   createPromotion,
   deletePromotion,
   fetchActivePromotions,
+  fetchBundle,
   fetchCoupon,
   fetchDiscounts,
   fetchExpiredPromotions,
@@ -226,5 +227,13 @@ export const useDiscounts = () => {
 export const useValidateCoupon = () => {
   return useMutation({
     mutationFn: (code: string) => fetchCoupon(code),
+  });
+};
+export const useFetchBundle = () => {
+  return useMutation({
+    mutationFn: (bundleId: number) => fetchBundle(bundleId),
+    onError: (error: Error) => {
+      console.error("Bundle Fetch Error:", error.message);
+    },
   });
 };
