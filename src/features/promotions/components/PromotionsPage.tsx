@@ -2,7 +2,7 @@ import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { ThemedText } from "@/src/themed/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { FilterBar } from "./FilterBar";
 import { PromotionCard } from "./PromotionCard";
 
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Promotion } from "../promotions.types";
 // Hooks & Utils
 import { useDebounce } from "../hooks/useDebounce";
@@ -43,14 +43,29 @@ const PromotionsPage = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // --- Data Fetching ---
-  const { data: activeData, isLoading: activeLoading } = useActivePromotions();
-  const { data: expiredData, isLoading: expiredLoading } = useExpiredPromotions(
-    expiredPage,
-    expiredPageLimit,
-  );
+  const {
+    data: activeData,
+    isLoading: activeLoading,
+    refetch: refetchActive,
+  } = useActivePromotions();
+
+  const {
+    data: expiredData,
+    isLoading: expiredLoading,
+    refetch: refetchExpired,
+  } = useExpiredPromotions(expiredPage, expiredPageLimit);
 
   const activePromos = activeData?.data || [];
   const expiredPromos = expiredData?.data || [];
+  const refetchAll = async () => {
+    await Promise.all([refetchActive(), refetchExpired()]);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchAll();
+    }, []),
+  );
 
   const allPromos = useMemo(
     () => [...activePromos, ...expiredPromos],
@@ -194,10 +209,7 @@ const PromotionsPage = () => {
                   ]}
                 >
                   <ThemedText
-                    style={[
-                      styles.countText,
-                      { color: colors.actionPositive },
-                    ]}
+                    style={[styles.countText, { color: colors.actionPositive }]}
                   >
                     {displayActive.length}
                   </ThemedText>
@@ -266,10 +278,7 @@ const PromotionsPage = () => {
                   ]}
                 >
                   <ThemedText
-                    style={[
-                      styles.countText,
-                      { color: colors.textSecondary },
-                    ]}
+                    style={[styles.countText, { color: colors.textSecondary }]}
                   >
                     {displayExpired.length}
                   </ThemedText>
@@ -327,8 +336,6 @@ const styles = StyleSheet.create({
   },
   headerWrapper: {
     position: "relative",
-
-    
   },
   headerGradient: {
     paddingHorizontal: 20,
@@ -382,7 +389,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 20,
     transform: [{ translateY: 40 }], // Overlap effect
-    marginBottom:40
+    marginBottom: 40,
   },
   filterCard: {
     padding: 16,
@@ -392,7 +399,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    marginBottom:30
+    marginBottom: 30,
   },
   scrollContent: {
     paddingHorizontal: 20,

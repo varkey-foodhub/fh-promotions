@@ -2,15 +2,15 @@ import { useMenu } from "@/src/features/menu/menu.queries";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { ThemedText } from "@/src/themed/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBundles, useCreatePromotion } from "../promotions.queries";
 import { CreatePromotionPayload, FormValues } from "../promotions.types";
 import { ControlledDatePicker } from "./form/ControlledDatePicker";
+import { ThemedDropdown } from "./form/ControlledDropDown";
 import { ControlledInput } from "./form/ControlledInput";
 import CreatePromotionFieldTitle from "./form/CreatePromotionFieldTitle";
 import SelectionButton from "./form/ToggleButton";
@@ -51,7 +51,13 @@ const CreatePromotionForm = () => {
   const selectedType = watch("type");
   const selectedItemIds = watch("conditions.required_item_ids") || [];
   const selectedBundleId = watch("promotion_bundle_id");
-  const { data: bundles, isLoading: bundlesLoading } = useBundles();
+  const { data: bundles, isLoading: bundlesLoading, refetch } = useBundles();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, []),
+  );
 
   const getSelectedItems = () => {
     if (!menuItems || selectedItemIds.length === 0) return [];
@@ -62,6 +68,20 @@ const CreatePromotionForm = () => {
     const updatedIds = selectedItemIds.filter((id) => id !== itemId);
     setValue("conditions.required_item_ids", updatedIds);
   };
+
+  // Prepare Dropdown Options
+  const discountTypeOptions = [
+    { label: "Percentage (%)", value: "PERCENTAGE" },
+    { label: "Fixed Amount (₹)", value: "FIXED" },
+    { label: "Bundle", value: "BUNDLE" },
+  ];
+
+  const bundleOptions = [
+    { label: bundlesLoading ? "Loading..." : "Select bundle", value: null },
+    ...(bundles
+      ? bundles.map((b: any) => ({ label: b.name, value: b.id }))
+      : []),
+  ];
 
   const onSubmit = (data: FormValues) => {
     const payload: CreatePromotionPayload = {
@@ -102,7 +122,6 @@ const CreatePromotionForm = () => {
       };
     }
 
-    console.log(payload);
     createMutation.mutate(payload, {
       onSuccess: () => {
         router.back();
@@ -185,30 +204,18 @@ const CreatePromotionForm = () => {
           {/* Discount Value Section */}
           <View style={styles.section}>
             <View style={styles.sectionDivider} />
-            <CreatePromotionFieldTitle text="Discount Type" />
             <Controller
               control={control}
               name="type"
-              render={({ field: { onChange, value } }) => (
-                <View
-                  style={[
-                    styles.dropdownContainer,
-                    { borderColor: colors.borderLight },
-                  ]}
-                >
-                  <Picker
-                    selectedValue={value}
-                    onValueChange={(itemValue) => onChange(itemValue)}
-                    dropdownIconColor={colors.textPrimary}
-                    style={{ color: colors.textPrimary }}
-                  >
-                    <Picker.Item label="Percentage (%)" value="PERCENTAGE" />
-                    <Picker.Item label="Fixed Amount (₹)" value="FIXED" />
-                    <Picker.Item label="Bundle" value="BUNDLE" />
-                  </Picker>
-                </View>
-              )}
               rules={{ required: true }}
+              render={({ field: { onChange, value } }) => (
+                <ThemedDropdown
+                  label="Discount Type"
+                  value={value}
+                  onSelect={onChange}
+                  options={discountTypeOptions}
+                />
+              )}
             />
 
             {/* Dynamic Value Input */}
@@ -258,39 +265,19 @@ const CreatePromotionForm = () => {
               {/* Bundle selection UI */}
               {selectedType === "BUNDLE" && (
                 <View style={{ marginTop: 8, gap: 8 }}>
-                  <CreatePromotionFieldTitle text="Select Bundle" />
                   <Controller
                     control={control}
                     name="promotion_bundle_id"
                     render={({ field: { onChange, value } }) => (
-                      <View
-                        style={[
-                          styles.dropdownContainer,
-                          { borderColor: colors.borderLight },
-                        ]}
-                      >
-                        <Picker
-                          selectedValue={value ?? null}
-                          onValueChange={(v) => onChange(v)}
-                          dropdownIconColor={colors.textPrimary}
-                          style={{ color: colors.textPrimary }}
-                        >
-                          <Picker.Item
-                            label={
-                              bundlesLoading ? "Loading..." : "Select bundle"
-                            }
-                            value={null}
-                          />
-                          {bundles &&
-                            bundles.map((b: any) => (
-                              <Picker.Item
-                                key={b.id}
-                                label={b.name}
-                                value={b.id}
-                              />
-                            ))}
-                        </Picker>
-                      </View>
+                      <ThemedDropdown
+                        label="Select Bundle"
+                        value={value}
+                        onSelect={onChange}
+                        options={bundleOptions}
+                        placeholder={
+                          bundlesLoading ? "Loading..." : "Choose a bundle"
+                        }
+                      />
                     )}
                   />
 
@@ -320,7 +307,7 @@ const CreatePromotionForm = () => {
                   )}
 
                   <TouchableOpacity
-                    onPress={() => router.push("/bundles/create")}
+                    onPress={() => router.push("/(manager)/createBundle")}
                     style={[
                       styles.createBundleButton,
                       { borderColor: colors.borderLight },
@@ -473,7 +460,7 @@ const CreatePromotionForm = () => {
       >
         <TouchableOpacity
           onPress={handleSubmit(onSubmit)}
-          disabled={!isValid || createMutation.isPending}
+          disabled={createMutation.isPending}
           style={[
             styles.submitButton,
             {
@@ -533,12 +520,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 12,
-  },
-  dropdownContainer: {
-    borderWidth: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#FAFAFA",
   },
   valueInputWrapper: {
     marginTop: 4,

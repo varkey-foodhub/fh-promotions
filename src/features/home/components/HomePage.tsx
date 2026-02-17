@@ -21,7 +21,7 @@ export default function HomePage() {
       <View style={styles.header}>
         <ThemedText
           variant="title"
-          style={{ fontSize: 40, color: colors.textAccentCO }}
+          style={{ fontSize: 30, color: colors.textAccentCO }}
         >
           FoodHub
         </ThemedText>
@@ -65,7 +65,7 @@ export default function HomePage() {
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.backgroundSecondary }]}
           activeOpacity={0.7}
-          onPress={() => handleNavigate("/(manager)")}
+          onPress={() => handleNavigate("/(manager)/(tabs)")}
         >
           <View style={styles.cardContent}>
             <ThemedText

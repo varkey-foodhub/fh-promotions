@@ -63,6 +63,7 @@ const CouponBox = () => {
 
         try {
           const bundleItems = await fetchBundleAsync(promo.promotion_bundle_id);
+
           console.log(bundleItems);
           const applied = await applyPromotion(promo, bundleItems);
 
@@ -74,6 +75,13 @@ const CouponBox = () => {
           console.log(e);
           setError("Failed to load bundle items.");
           return;
+        }
+      } else {
+        const applied = await applyPromotion(promo, []);
+
+        if (applied) {
+          setCouponCode("");
+          setIsExpanded(false);
         }
       }
 
