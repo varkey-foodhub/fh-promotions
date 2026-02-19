@@ -3,11 +3,13 @@ import { ThemedText } from "@/src/themed/ThemedText";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  Platform,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
-  View
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { type Promotion } from "../promotions.types";
 
@@ -19,6 +21,8 @@ interface Props {
 
 export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
   const colors = useThemeColor();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 900;
 
   // --- Logic ---
   const isExpired = item.valid_to
@@ -89,6 +93,7 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
     <View
       style={[
         styles.card,
+        isDesktop && styles.cardDesktop,
         {
           backgroundColor: colors.backgroundElevated,
           opacity: isExpired ? 0.7 : 1,
@@ -111,14 +116,12 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
       <View style={styles.contentSection}>
         {/* Title & Status Badge */}
         <View style={styles.titleRow}>
-          <ThemedText
-            variant="subtitle"
-            style={styles.title}
-            numberOfLines={1}
-          >
+          <ThemedText variant="subtitle" style={styles.title} numberOfLines={1}>
             {item.name}
           </ThemedText>
-          <View style={[styles.statusBadge, { backgroundColor: status.bgColor }]}>
+          <View
+            style={[styles.statusBadge, { backgroundColor: status.bgColor }]}
+          >
             <Ionicons name={status.icon} size={12} color={status.color} />
             <Text style={[styles.statusText, { color: status.color }]}>
               {status.label}
@@ -157,12 +160,7 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
         {/* Action Row */}
         <View style={styles.actionRow}>
           <View style={styles.toggleContainer}>
-            <Text
-              style={[
-                styles.toggleLabel,
-                { color: colors.textSecondary },
-              ]}
-            >
+            <Text style={[styles.toggleLabel, { color: colors.textSecondary }]}>
               {item.active ? "Active" : "Inactive"}
             </Text>
             <Switch
@@ -185,11 +183,7 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
             ]}
             activeOpacity={0.7}
           >
-            <Feather
-              name="trash-2"
-              size={16}
-              color={colors.actionNegative}
-            />
+            <Feather name="trash-2" size={16} color={colors.actionNegative} />
           </TouchableOpacity>
         </View>
       </View>
@@ -207,6 +201,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+  },
+  cardDesktop: {
+    width: 80,
   },
   discountBadge: {
     width: 100,

@@ -1,6 +1,8 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { removePromotionRequest } from "@/src/store/cart/cart.slice";
 import { useAppDispatch, useAppSelector } from "@/src/store/cart/hooks";
+import JaggedEdge from "./JaggedEdge";
+
 import React, { useState } from "react";
 import {
   LayoutChangeEvent,
@@ -146,10 +148,7 @@ const CartSummary = () => {
 
       {/* --- SHARP ZIGZAG EDGE --- */}
       {width > 0 && (
-        <SharpJaggedEdge
-          width={width}
-          backgroundColor={colors.backgroundElevated}
-        />
+        <JaggedEdge width={width} color={colors.backgroundElevated} />
       )}
     </View>
   );
@@ -160,36 +159,7 @@ const DashedLine = ({ color }: { color: string }) => (
   <View style={[styles.dashedLine, { borderColor: color }]} />
 );
 
-// --- Helper: Sharp Jagged Edge (Sawtooth) ---
-const SharpJaggedEdge = ({
-  width,
-  backgroundColor,
-}: {
-  width: number;
-  backgroundColor: string;
-}) => {
-  const toothWidth = 20; // Size of each triangle base
-  const numberOfTeeth = Math.ceil(width / toothWidth);
-
-  return (
-    <View style={[styles.zigzagContainer, { height: toothWidth / 2 }]}>
-      {Array.from({ length: numberOfTeeth }).map((_, index) => (
-        <View
-          key={index}
-          style={[
-            styles.triangle,
-            {
-              backgroundColor,
-              width: toothWidth / Math.SQRT2, // Adjust size for 45deg rotation
-              height: toothWidth / Math.SQRT2,
-              left: index * toothWidth - toothWidth / 2, // Overlap logic
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-};
+// --- Helper: Sharp Jagged Edge (Sawtooth) ---// Replace your SharpJaggedEdge component with this:
 
 export default CartSummary;
 

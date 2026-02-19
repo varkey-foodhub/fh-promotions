@@ -4,7 +4,12 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePlaceOrder } from "../../cart.query";
-const CheckoutBar = () => {
+
+interface Props {
+  inline?: boolean;
+}
+
+const CheckoutBar = ({ inline = false }: Props) => {
   const colors = useThemeColor();
   const total = useAppSelector((s) => s.cart.total);
   const { mutate, isPending } = usePlaceOrder();
@@ -21,7 +26,13 @@ const CheckoutBar = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.actionPrimary }]}>
+    <View
+      style={[
+        styles.containerBase,
+        inline ? styles.containerInline : styles.containerAbsolute,
+        { backgroundColor: colors.actionPrimary },
+      ]}
+    >
       <View>
         <Text style={styles.totalText}>₹{total}</Text>
         <Text style={styles.subLabel}>Final amount may change</Text>
@@ -43,17 +54,23 @@ const CheckoutBar = () => {
 export default CheckoutBar;
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    bottom: 20,
-    left: 16,
-    right: 16,
+  containerBase: {
     borderRadius: 14,
     padding: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     elevation: 10,
+  },
+  containerAbsolute: {
+    position: "absolute",
+    bottom: 20,
+    left: 16,
+    right: 16,
+  },
+  containerInline: {
+    position: "relative",
+    width: "100%",
   },
   totalText: {
     color: "white",
