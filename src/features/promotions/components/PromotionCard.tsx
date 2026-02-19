@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardDesktop: {
-    width: 80,
+    width: 650,
   },
   discountBadge: {
     width: 100,

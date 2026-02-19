@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,6 +33,8 @@ const PromotionsPage = () => {
   const router = useRouter();
   const deleteMutation = useDeletePromotion();
   const toggleMutation = useTogglePromotion();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 900;
 
   // --- State ---
   const [expiredPage, setExpiredPage] = useState(1);
@@ -186,140 +189,156 @@ const PromotionsPage = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Active Section */}
-        {showActiveSection && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionHeaderLeft}>
-                <View
-                  style={[
-                    styles.sectionIndicator,
-                    { backgroundColor: colors.actionPositive },
-                  ]}
-                />
-                <ThemedText variant="caption" style={styles.sectionTitle}>
-                  ACTIVE PROMOTIONS
-                </ThemedText>
-              </View>
-              {!activeLoading && (
-                <View
-                  style={[
-                    styles.countBadge,
-                    { backgroundColor: colors.actionPositive + "20" },
-                  ]}
-                >
-                  <ThemedText
-                    style={[styles.countText, { color: colors.actionPositive }]}
+        <View
+          style={[
+            styles.sectionsWrapper,
+            isDesktop && styles.sectionsWrapperDesktop,
+          ]}
+        >
+          {/* Active Section */}
+          {showActiveSection && (
+            <View style={[styles.section, isDesktop && styles.sectionDesktop]}>
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderLeft}>
+                  <View
+                    style={[
+                      styles.sectionIndicator,
+                      { backgroundColor: colors.actionPositive },
+                    ]}
+                  />
+                  <ThemedText variant="caption" style={styles.sectionTitle}>
+                    ACTIVE PROMOTIONS
+                  </ThemedText>
+                </View>
+                {!activeLoading && (
+                  <View
+                    style={[
+                      styles.countBadge,
+                      { backgroundColor: colors.actionPositive + "20" },
+                    ]}
                   >
-                    {displayActive.length}
+                    <ThemedText
+                      style={[
+                        styles.countText,
+                        { color: colors.actionPositive },
+                      ]}
+                    >
+                      {displayActive.length}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+
+              {activeLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#D32F2F" />
+                </View>
+              )}
+
+              {!activeLoading && displayActive.length === 0 && (
+                <View style={styles.emptyState}>
+                  <Ionicons
+                    name="pricetag-outline"
+                    size={48}
+                    color={colors.textSecondary}
+                    style={{ opacity: 0.3 }}
+                  />
+                  <ThemedText style={styles.emptyText}>
+                    {searchQuery || typeFilter
+                      ? "No active promotions match your filters"
+                      : "No active promotions yet"}
+                  </ThemedText>
+                  <ThemedText style={styles.emptySubtext}>
+                    {!searchQuery && !typeFilter && "Create one to get started"}
                   </ThemedText>
                 </View>
               )}
+
+              <View style={styles.cardsContainer}>
+                {displayActive.map((item) => (
+                  <PromotionCard
+                    key={item.id}
+                    item={item}
+                    onDelete={handler.handleDelete}
+                    onToggleActive={handleToggle}
+                  />
+                ))}
+              </View>
             </View>
+          )}
 
-            {activeLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#D32F2F" />
-              </View>
-            )}
-
-            {!activeLoading && displayActive.length === 0 && (
-              <View style={styles.emptyState}>
-                <Ionicons
-                  name="pricetag-outline"
-                  size={48}
-                  color={colors.textSecondary}
-                  style={{ opacity: 0.3 }}
-                />
-                <ThemedText style={styles.emptyText}>
-                  {searchQuery || typeFilter
-                    ? "No active promotions match your filters"
-                    : "No active promotions yet"}
-                </ThemedText>
-                <ThemedText style={styles.emptySubtext}>
-                  {!searchQuery && !typeFilter && "Create one to get started"}
-                </ThemedText>
-              </View>
-            )}
-
-            <View style={styles.cardsContainer}>
-              {displayActive.map((item) => (
-                <PromotionCard
-                  key={item.id}
-                  item={item}
-                  onDelete={handler.handleDelete}
-                  onToggleActive={handleToggle}
-                />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Expired Section */}
-        {showExpiredSection && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionHeaderLeft}>
-                <View
-                  style={[
-                    styles.sectionIndicator,
-                    { backgroundColor: colors.textSecondary },
-                  ]}
-                />
-                <ThemedText variant="caption" style={styles.sectionTitle}>
-                  EXPIRED PROMOTIONS
-                </ThemedText>
-              </View>
-              {!expiredLoading && (
-                <View
-                  style={[
-                    styles.countBadge,
-                    { backgroundColor: colors.textSecondary + "20" },
-                  ]}
-                >
-                  <ThemedText
-                    style={[styles.countText, { color: colors.textSecondary }]}
+          {/* Expired Section */}
+          {showExpiredSection && (
+            <View style={[styles.section, isDesktop && styles.sectionDesktop]}>
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderLeft}>
+                  <View
+                    style={[
+                      styles.sectionIndicator,
+                      { backgroundColor: colors.textSecondary },
+                    ]}
+                  />
+                  <ThemedText variant="caption" style={styles.sectionTitle}>
+                    EXPIRED PROMOTIONS
+                  </ThemedText>
+                </View>
+                {!expiredLoading && (
+                  <View
+                    style={[
+                      styles.countBadge,
+                      { backgroundColor: colors.textSecondary + "20" },
+                    ]}
                   >
-                    {displayExpired.length}
+                    <ThemedText
+                      style={[
+                        styles.countText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {displayExpired.length}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+
+              {expiredLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator
+                    size="large"
+                    color={colors.textSecondary}
+                  />
+                </View>
+              )}
+
+              {!expiredLoading && displayExpired.length === 0 && (
+                <View style={styles.emptyState}>
+                  <Ionicons
+                    name="time-outline"
+                    size={48}
+                    color={colors.textSecondary}
+                    style={{ opacity: 0.3 }}
+                  />
+                  <ThemedText style={styles.emptyText}>
+                    {searchQuery || typeFilter
+                      ? "No expired promotions match your filters"
+                      : "No expired promotions"}
                   </ThemedText>
                 </View>
               )}
-            </View>
 
-            {expiredLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.textSecondary} />
+              <View style={styles.cardsContainer}>
+                {displayExpired.map((item) => (
+                  <PromotionCard
+                    key={item.id}
+                    item={item}
+                    onDelete={handler.handleDelete}
+                    onToggleActive={handleToggle}
+                  />
+                ))}
               </View>
-            )}
-
-            {!expiredLoading && displayExpired.length === 0 && (
-              <View style={styles.emptyState}>
-                <Ionicons
-                  name="time-outline"
-                  size={48}
-                  color={colors.textSecondary}
-                  style={{ opacity: 0.3 }}
-                />
-                <ThemedText style={styles.emptyText}>
-                  {searchQuery || typeFilter
-                    ? "No expired promotions match your filters"
-                    : "No expired promotions"}
-                </ThemedText>
-              </View>
-            )}
-
-            <View style={styles.cardsContainer}>
-              {displayExpired.map((item) => (
-                <PromotionCard
-                  key={item.id}
-                  item={item}
-                  onDelete={handler.handleDelete}
-                  onToggleActive={handleToggle}
-                />
-              ))}
             </View>
-          </View>
-        )}
+          )}
+        </View>
 
         <View style={{ height: 60 }} />
       </ScrollView>
@@ -405,8 +424,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60, // Account for overlapping filter card
   },
+  sectionsWrapper: {
+    gap: 24,
+  },
+  sectionsWrapperDesktop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 24,
+  },
   section: {
     marginBottom: 32,
+  },
+  sectionDesktop: {
+    flex: 1,
+    marginBottom: 0,
   },
   sectionHeaderRow: {
     flexDirection: "row",
