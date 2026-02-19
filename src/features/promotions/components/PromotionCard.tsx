@@ -163,16 +163,46 @@ export const PromotionCard = ({ item, onDelete, onToggleActive }: Props) => {
             <Text style={[styles.toggleLabel, { color: colors.textSecondary }]}>
               {item.active ? "Active" : "Inactive"}
             </Text>
-            <Switch
-              value={item.active}
-              onValueChange={(val) => onToggleActive(item.id, val)}
-              trackColor={{
-                false: colors.borderLight,
-                true: status.color + "40",
-              }}
-              thumbColor={item.active ? status.color : "#f4f3f4"}
-              ios_backgroundColor={colors.borderLight}
-            />
+            {Platform.OS === "ios" ? (
+              <TouchableOpacity
+                onPress={() => onToggleActive(item.id, !item.active)}
+                activeOpacity={0.8}
+                style={[
+                  styles.iosToggle,
+                  {
+                    backgroundColor: item.active
+                      ? status.color + "40"
+                      : colors.borderLight,
+                    borderColor: item.active
+                      ? status.color + "60"
+                      : colors.borderLight,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.iosToggleThumb,
+                    item.active
+                      ? styles.iosToggleThumbActive
+                      : styles.iosToggleThumbInactive,
+                    {
+                      backgroundColor: item.active ? status.color : "#f4f3f4",
+                    },
+                  ]}
+                />
+              </TouchableOpacity>
+            ) : (
+              <Switch
+                value={item.active}
+                onValueChange={(val) => onToggleActive(item.id, val)}
+                trackColor={{
+                  false: colors.borderLight,
+                  true: status.color + "40",
+                }}
+                thumbColor={item.active ? status.color : "#f4f3f4"}
+                ios_backgroundColor={colors.borderLight}
+              />
+            )}
           </View>
 
           <TouchableOpacity
@@ -297,6 +327,25 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  iosToggle: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+    padding: 2,
+    justifyContent: "center",
+  },
+  iosToggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
+  iosToggleThumbActive: {
+    alignSelf: "flex-end",
+  },
+  iosToggleThumbInactive: {
+    alignSelf: "flex-start",
   },
   deleteButton: {
     width: 36,
