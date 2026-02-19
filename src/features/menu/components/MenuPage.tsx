@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useMenu } from "../menu.queries";
 import CartBar from "./user/CartBar";
 import MenuItemCard from "./user/MenuItemCard";
+import WebCartBar from "./user/WebCartBar";
 
 const MenuHomePage = () => {
   const colors = useThemeColor();
@@ -96,7 +97,7 @@ const MenuHomePage = () => {
         showsVerticalScrollIndicator={false}
       />
 
-      <CartBar />
+      {Platform.OS === "web" ? <WebCartBar /> : <CartBar />}
     </SafeAreaView>
   );
 };
