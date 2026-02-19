@@ -151,7 +151,9 @@ const CouponBox = () => {
             <Text style={[styles.promoDesc, { color: colors.actionPrimary }]}>
               {appliedPromotion.type === "PERCENTAGE"
                 ? `${appliedPromotion.percent_off}% Discount Applied`
-                : `₹${appliedPromotion.flat_amount} Discount Applied`}
+                : appliedPromotion.type === "BUNDLE"
+                  ? appliedPromotion.name
+                  : `₹${appliedPromotion.flat_amount} Discount Applied`}
             </Text>
           </View>
 
