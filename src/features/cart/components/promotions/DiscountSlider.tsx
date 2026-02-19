@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,19 +16,17 @@ import {
 } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = SCREEN_WIDTH * 0.85; // Slightly smaller for peek effect
+const device = Platform.OS;
+const CARD_WIDTH = device === "web" ? SCREEN_WIDTH * 0.25 : SCREEN_WIDTH * 0.65;
 const SPACING = 16;
 
-// Helper function to format validation errors for better UX
 const formatErrorMessage = (error: string): string => {
   if (error.includes("required_item_ids missing")) {
     return "Add required items to cart";
   }
   if (error.includes("min_order_value not met")) {
     const match = error.match(/need (\d+)/);
-    if (match) {
-      return `Minimum order ₹${match[1]} required`;
-    }
+    if (match) return `Minimum order ₹${match[1]} required`;
     return "Minimum order value not met";
   }
   if (error.includes("required_item_ids must be an array")) {
@@ -43,10 +42,12 @@ const DiscountSlider = () => {
 
   const applyPromotion = (promotion: any, resolvedBundleItems: any[]) =>
     dispatch(applyPromotionRequest({ promotion, resolvedBundleItems }));
+
   const appliedPromotion = useAppSelector((s) => s.cart.appliedPromotion);
   const cartItems = useAppSelector((s) => s.cart.items);
   const subtotal = useAppSelector((s) => s.cart.subtotal);
 
+  const [activeIndex, setActiveIndex] = useState(0);
   const [validationStatus, setValidationStatus] = useState<
     Record<number, { valid: boolean; error?: string }>
   >({});
@@ -56,7 +57,6 @@ const DiscountSlider = () => {
     [data],
   );
 
-  // Validate all discounts whenever cart changes
   useEffect(() => {
     const validateDiscounts = async () => {
       const order = {
@@ -69,21 +69,24 @@ const DiscountSlider = () => {
       };
 
       const results: Record<number, { valid: boolean; error?: string }> = {};
-
       for (const discount of discounts) {
         const result = await validate(discount, order);
         results[discount.id] = result.valid
           ? { valid: true }
           : { valid: false, error: result.error };
       }
-
       setValidationStatus(results);
     };
 
-    if (discounts.length > 0) {
-      validateDiscounts();
-    }
+    if (discounts.length > 0) validateDiscounts();
   }, [discounts, cartItems, subtotal]);
+
+  const handleScroll = (e: any) => {
+    const index = Math.round(
+      e.nativeEvent.contentOffset.x / (CARD_WIDTH + SPACING),
+    );
+    setActiveIndex(index);
+  };
 
   if (isLoading || discounts.length === 0) return null;
 
@@ -94,10 +97,10 @@ const DiscountSlider = () => {
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{
-          paddingHorizontal: SPACING,
-        }}
+        contentContainerStyle={{ paddingHorizontal: SPACING }}
         ItemSeparatorComponent={() => <View style={{ width: SPACING }} />}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         renderItem={({ item }) => {
           const isApplied = appliedPromotion?.id === item.id;
           const validation = validationStatus[item.id];
@@ -158,7 +161,6 @@ const DiscountSlider = () => {
                       {item.code}
                     </Text>
 
-                    {/* Error Message */}
                     {!isValid && errorMessage && (
                       <Text style={styles.errorText} numberOfLines={2}>
                         {errorMessage}
@@ -202,6 +204,25 @@ const DiscountSlider = () => {
           );
         }}
       />
+
+      {/* Dot indicators */}
+      {discounts.length > 1 && (
+        <View style={styles.dotsContainer}>
+          {discounts.map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                {
+                  backgroundColor:
+                    i === activeIndex ? colors.textPrimary : colors.borderLight,
+                  width: i === activeIndex ? 16 : 6,
+                },
+              ]}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 };
@@ -234,7 +255,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#FFF5F5",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -264,5 +284,16 @@ const styles = StyleSheet.create({
     color: "#FF4444",
     marginTop: 4,
     lineHeight: 14,
+  },
+  dotsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+  },
+  dot: {
+    height: 6,
+    borderRadius: 3,
   },
 });

@@ -1,8 +1,6 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
 import { removePromotionRequest } from "@/src/store/cart/cart.slice";
 import { useAppDispatch, useAppSelector } from "@/src/store/cart/hooks";
-import JaggedEdge from "./JaggedEdge";
-
 import React, { useState } from "react";
 import {
   LayoutChangeEvent,
@@ -148,7 +146,10 @@ const CartSummary = () => {
 
       {/* --- SHARP ZIGZAG EDGE --- */}
       {width > 0 && (
-        <JaggedEdge width={width} color={colors.backgroundElevated} />
+        <SharpJaggedEdge
+          width={width}
+          backgroundColor={colors.backgroundElevated}
+        />
       )}
     </View>
   );
@@ -160,6 +161,59 @@ const DashedLine = ({ color }: { color: string }) => (
 );
 
 // --- Helper: Sharp Jagged Edge (Sawtooth) ---// Replace your SharpJaggedEdge component with this:
+const SharpJaggedEdge = ({
+  width,
+  backgroundColor,
+}: {
+  width: number;
+  backgroundColor: string;
+}) => {
+  if (Platform.OS === "web") {
+    // SVG zigzag for web
+    const toothWidth = 20;
+    const toothHeight = 10;
+    const numberOfTeeth = Math.ceil(width / toothWidth);
+    const totalWidth = numberOfTeeth * toothWidth;
+
+    // Build SVG path — starts top-left, zigzags down
+    let d = `M0,0`;
+    for (let i = 0; i < numberOfTeeth; i++) {
+      const x1 = i * toothWidth + toothWidth / 2;
+      const x2 = (i + 1) * toothWidth;
+      d += ` L${x1},${toothHeight} L${x2},0`;
+    }
+    d += ` L${totalWidth},0 Z`;
+
+    return (
+      <svg width={totalWidth} height={toothHeight} style={{ display: "block" }}>
+        <path d={d} fill={backgroundColor} />
+      </svg>
+    );
+  }
+
+  // Native — original implementation
+  const toothWidth = 20;
+  const numberOfTeeth = Math.ceil(width / toothWidth);
+
+  return (
+    <View style={[styles.zigzagContainer, { height: toothWidth / 2 }]}>
+      {Array.from({ length: numberOfTeeth }).map((_, index) => (
+        <View
+          key={index}
+          style={[
+            styles.triangle,
+            {
+              backgroundColor,
+              width: toothWidth / Math.SQRT2,
+              height: toothWidth / Math.SQRT2,
+              left: index * toothWidth - toothWidth / 2,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+};
 
 export default CartSummary;
 
