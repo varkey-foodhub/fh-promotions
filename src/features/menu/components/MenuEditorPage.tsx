@@ -6,8 +6,10 @@ import React from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,24 +20,41 @@ import {
 } from "../menu.queries";
 import { MenuItem } from "../menu.types";
 import { MenuEditorItemCard } from "./MenuIEditortemCard";
+
 const MenuEditorPage = () => {
   const { data, isLoading, error } = useMenu();
   const colors = useThemeColor();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
+
+  // Responsive columns — same pattern as MenuHomePage
+  const columns = isWeb
+    ? width >= 1400
+      ? 8
+      : width >= 1100
+        ? 6
+        : width >= 800
+          ? 4
+          : 3
+    : 2;
+
+  const gridGap = 16;
+  const horizontalPadding = 32;
+  const availableWidth = Math.max(
+    0,
+    width - horizontalPadding - gridGap * (columns - 1),
+  );
+  const cardWidth = isWeb ? Math.floor(availableWidth / columns) : undefined;
 
   const { mutate: markOOS } = useMarkOutOfStock();
   const { mutate: markBIS } = useMarkBackInStock();
 
   const handler = {
-    navigateBack: () => {
-      router.back();
-    },
+    navigateBack: () => router.back(),
     toggleStock: (id: number, currentStatus: boolean) => {
-      if (currentStatus) {
-        markBIS(id);
-      } else {
-        markOOS(id);
-      }
+      if (currentStatus) markBIS(id);
+      else markOOS(id);
     },
   };
 
@@ -71,12 +90,17 @@ const MenuEditorPage = () => {
       <FlatList
         data={data as MenuItem[]}
         keyExtractor={(item) => item.id.toString()}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+        numColumns={columns}
+        key={columns} // forces re-render when columns change
+        columnWrapperStyle={isWeb ? styles.columnWrapperWeb : styles.row}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <MenuEditorItemCard item={item} onToggleStock={handler.toggleStock} />
+          <MenuEditorItemCard
+            item={item}
+            onToggleStock={handler.toggleStock}
+            cardWidth={cardWidth}
+          />
         )}
       />
     </SafeAreaView>
@@ -86,14 +110,8 @@ const MenuEditorPage = () => {
 export default MenuEditorPage;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -109,5 +127,9 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: "space-between",
     gap: 12,
+  },
+  columnWrapperWeb: {
+    justifyContent: "flex-start",
+    gap: 16,
   },
 });

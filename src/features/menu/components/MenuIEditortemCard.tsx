@@ -10,30 +10,34 @@ import {
 } from "react-native";
 import { useFoodImages } from "../../photos/pexels.query";
 import { MenuItem } from "../menu.types";
+
 const { width } = Dimensions.get("window");
-// Calculate card width for 2 columns with padding
-// Screen Padding (16*2) + Gap (12) = 44 total deduction
 const CARD_WIDTH = (width - 44) / 2;
 
 interface MenuEditorItemCardProps {
   item: MenuItem;
   onToggleStock: (id: number, currentStatus: boolean) => void;
+  cardWidth?: number; // optional — falls back to native 2-col width
 }
 
 export const MenuEditorItemCard = ({
   item,
   onToggleStock,
+  cardWidth,
 }: MenuEditorItemCardProps) => {
   const colors = useThemeColor();
   const isOutOfStock = item.out_of_stock;
   const { data } = useFoodImages(item.name);
+
+  const resolvedWidth = cardWidth ?? CARD_WIDTH;
+
   return (
     <View
       style={[
         styles.card,
         {
+          width: resolvedWidth,
           backgroundColor: colors.backgroundElevated,
-          // Subtle shadow like the screenshot
           shadowColor: "#000",
           shadowOpacity: 0.05,
           shadowRadius: 8,
@@ -42,13 +46,12 @@ export const MenuEditorItemCard = ({
         },
       ]}
     >
-      {/* 1. Image Section (Top Half) */}
+      {/* Image */}
       <View style={styles.imageContainer}>
         <Image
           source={{ uri: data?.[0]?.src?.medium }}
           style={[styles.image, isOutOfStock && styles.imageGrayscale]}
         />
-        {/* Out of Stock Badge */}
         {isOutOfStock && (
           <View
             style={[
@@ -70,9 +73,8 @@ export const MenuEditorItemCard = ({
         )}
       </View>
 
-      {/* 2. Content Section (Bottom Half) */}
+      {/* Content */}
       <View style={styles.content}>
-        {/* Title */}
         <ThemedText
           variant="default"
           numberOfLines={2}
@@ -81,26 +83,22 @@ export const MenuEditorItemCard = ({
           {item.name}
         </ThemedText>
 
-        {/* Price (Red, like screenshot) */}
         <ThemedText
           variant="subtitle"
           style={{ color: colors.accentCO, fontWeight: "800" }}
         >
           ₹{item.price.toFixed(0)}
-          {/* Note: Screenshot used ₹44411 format, removed decimals for style match */}
         </ThemedText>
 
-        {/* 3. Action Button (Bottom Right) */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => onToggleStock(item.id, item.out_of_stock)}
           style={[
             styles.actionButton,
             {
-              // Red (CO) for normal actions, Green (CM) to restore stock
               backgroundColor: isOutOfStock
-                ? colors.actionPositive // "Restock"
-                : colors.actionNegative, // "Disable" (matches the Red ADD button)
+                ? colors.actionPositive
+                : colors.actionNegative,
             },
           ]}
         >
@@ -122,11 +120,9 @@ export const MenuEditorItemCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    width: CARD_WIDTH,
     borderRadius: 16,
-    overflow: "visible", // Allowed for shadow
+    overflow: "visible",
     marginBottom: 16,
-    // Ensure content stays inside borders despite visible overflow for shadow
     backgroundColor: "white",
   },
   imageContainer: {
@@ -134,7 +130,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    overflow: "hidden", // Clip the image to rounded corners
+    overflow: "hidden",
     backgroundColor: "#f0f0f0",
   },
   image: {
@@ -160,7 +156,7 @@ const styles = StyleSheet.create({
     right: 12,
     paddingVertical: 6,
     paddingHorizontal: 16,
-    borderRadius: 20, // Pill shape
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
   },
