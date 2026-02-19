@@ -1,14 +1,19 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import {
+  decrementRequest,
+  incrementRequest,
+} from "@/src/store/cart/cart.slice";
+import { useAppDispatch, useAppSelector } from "@/src/store/cart/hooks";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const QuantityStepper = ({ id }: { id: number }) => {
   const colors = useThemeColor();
-  const increment = useCartStore((s) => s.increment);
-  const decrement = useCartStore((s) => s.decrement);
-  const qty = useCartStore(
-    (s) => s.items.find((i) => i.id === id)?.quantity ?? 0,
+  const dispatch = useAppDispatch();
+  const increment = () => dispatch(incrementRequest({ id }));
+  const decrement = () => dispatch(decrementRequest({ id }));
+  const qty = useAppSelector(
+    (s) => s.cart.items.find((i) => i.id === id)?.quantity ?? 0,
   );
 
   return (
@@ -22,7 +27,7 @@ const QuantityStepper = ({ id }: { id: number }) => {
       ]}
     >
       <TouchableOpacity
-        onPress={() => decrement(id)}
+        onPress={() => decrement()}
         style={styles.button}
         activeOpacity={0.7}
       >
@@ -32,7 +37,7 @@ const QuantityStepper = ({ id }: { id: number }) => {
       <Text style={[styles.qty, { color: colors.textPrimary }]}>{qty}</Text>
 
       <TouchableOpacity
-        onPress={() => increment(id)}
+        onPress={() => increment()}
         style={styles.button}
         activeOpacity={0.7}
       >

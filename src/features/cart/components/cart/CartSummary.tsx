@@ -1,5 +1,6 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import { removePromotionRequest } from "@/src/store/cart/cart.slice";
+import { useAppDispatch, useAppSelector } from "@/src/store/cart/hooks";
 import React, { useState } from "react";
 import {
   LayoutChangeEvent,
@@ -12,13 +13,14 @@ import {
 
 const CartSummary = () => {
   const colors = useThemeColor();
+  const dispatch = useAppDispatch();
 
-  const items = useCartStore((s) => s.items); // Get items for the receipt list
-  const subtotal = useCartStore((s) => s.subtotal);
-  const total = useCartStore((s) => s.total);
-  const discountAmount = useCartStore((s) => s.discountAmount);
-  const appliedPromotion = useCartStore((s) => s.appliedPromotion);
-  const removePromotion = useCartStore((s) => s.removePromotion);
+  const items = useAppSelector((s) => s.cart.items); // Get items for the receipt list
+  const subtotal = useAppSelector((s) => s.cart.subtotal);
+  const total = useAppSelector((s) => s.cart.total);
+  const discountAmount = useAppSelector((s) => s.cart.discountAmount);
+  const appliedPromotion = useAppSelector((s) => s.cart.appliedPromotion);
+  const removePromotion = () => dispatch(removePromotionRequest());
 
   const hasDiscount = discountAmount > 0;
 

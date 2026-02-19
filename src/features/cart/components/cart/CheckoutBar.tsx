@@ -1,14 +1,14 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import { useAppSelector } from "@/src/store/cart/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePlaceOrder } from "../../cart.query";
 const CheckoutBar = () => {
   const colors = useThemeColor();
-  const total = useCartStore((s) => s.total);
+  const total = useAppSelector((s) => s.cart.total);
   const { mutate, isPending } = usePlaceOrder();
-  const cart = useCartStore();
+  const cart = useAppSelector((s) => s.cart);
 
   const handleCheckout = () => {
     mutate({

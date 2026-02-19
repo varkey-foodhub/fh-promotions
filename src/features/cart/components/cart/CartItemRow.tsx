@@ -1,12 +1,19 @@
 import { useFoodImages } from "@/src/features/photos/pexels.query";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import {
+  decrementRequest,
+  incrementRequest,
+} from "@/src/store/cart/cart.slice";
+import { useAppDispatch } from "@/src/store/cart/hooks";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 const CartItemRow = ({ item }: any) => {
   const colors = useThemeColor();
-  const increment = useCartStore((s) => s.increment);
-  const decrement = useCartStore((s) => s.decrement);
+  const dispatch = useAppDispatch();
+  const increment = (id: number, isPromotional?: boolean) =>
+    dispatch(incrementRequest({ id, isPromotional }));
+  const decrement = (id: number, isPromotional?: boolean) =>
+    dispatch(decrementRequest({ id, isPromotional }));
   const { data } = useFoodImages(item.name);
   const imageUrl = data?.[0]?.src?.medium;
 

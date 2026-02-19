@@ -1,7 +1,8 @@
 import { validate } from "@/src/features/promotions/promotions.conditions.validator";
 import { useDiscounts } from "@/src/features/promotions/promotions.queries";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import { applyPromotionRequest } from "@/src/store/cart/cart.slice";
+import { useAppDispatch, useAppSelector } from "@/src/store/cart/hooks";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -38,11 +39,13 @@ const formatErrorMessage = (error: string): string => {
 const DiscountSlider = () => {
   const colors = useThemeColor();
   const { data = [], isLoading } = useDiscounts();
+  const dispatch = useAppDispatch();
 
-  const applyPromotion = useCartStore((s) => s.applyPromotion);
-  const appliedPromotion = useCartStore((s) => s.appliedPromotion);
-  const cartItems = useCartStore((s) => s.items);
-  const subtotal = useCartStore((s) => s.subtotal);
+  const applyPromotion = (promotion: any, resolvedBundleItems: any[]) =>
+    dispatch(applyPromotionRequest({ promotion, resolvedBundleItems }));
+  const appliedPromotion = useAppSelector((s) => s.cart.appliedPromotion);
+  const cartItems = useAppSelector((s) => s.cart.items);
+  const subtotal = useAppSelector((s) => s.cart.subtotal);
 
   const [validationStatus, setValidationStatus] = useState<
     Record<number, { valid: boolean; error?: string }>
@@ -167,7 +170,7 @@ const DiscountSlider = () => {
                 {/* Apply Button */}
                 <TouchableOpacity
                   disabled={isApplied || !isValid}
-                  onPress={async () => await applyPromotion(item, [])}
+                  onPress={() => applyPromotion(item, [])}
                   style={[
                     styles.applyBtn,
                     {
