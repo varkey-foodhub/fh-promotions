@@ -1,5 +1,5 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import { useAppSelector } from "@/src/store/cart/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -18,8 +18,8 @@ import Promotions from "./promotions";
 const CartPage = () => {
   const colors = useThemeColor();
   const router = useRouter();
-  const items = useCartStore((s) => s.items);
-  const subtotal = useCartStore((s) => s.subtotal);
+  const items = useAppSelector((s) => s.cart.items);
+  const subtotal = useAppSelector((s) => s.cart.subtotal);
 
   return (
     <SafeAreaView

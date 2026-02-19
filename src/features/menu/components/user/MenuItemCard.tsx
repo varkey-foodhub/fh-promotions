@@ -1,6 +1,7 @@
 import { useFoodImages } from "@/src/features/photos/pexels.query";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import { addItemRequest } from "@/src/store/cart/cart.slice";
+import { useAppDispatch, useAppSelector } from "@/src/store/cart/hooks";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { MenuItem } from "../../menu.types";
@@ -13,11 +14,13 @@ interface Props {
 const MenuItemCard = ({ item }: Props) => {
   const colors = useThemeColor();
   const { data } = useFoodImages(item.name);
+  const dispatch = useAppDispatch();
 
-  const quantity = useCartStore(
-    (s) => s.items.find((i) => i.id === item.id)?.quantity ?? 0,
+  const quantity = useAppSelector(
+    (s) => s.cart.items.find((i) => i.id === item.id)?.quantity ?? 0,
   );
-  const addItem = useCartStore((s) => s.addItem);
+  const addItem = (menuItem: MenuItem) =>
+    dispatch(addItemRequest({ item: menuItem }));
 
   const imageUrl = data?.[0]?.src?.medium;
 

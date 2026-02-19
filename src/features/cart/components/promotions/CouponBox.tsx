@@ -3,9 +3,13 @@ import {
   useValidateCoupon,
 } from "@/src/features/promotions/promotions.queries";
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import {
+  applyPromotionRequest,
+  removePromotionRequest,
+} from "@/src/store/cart/cart.slice";
+import { useAppDispatch, useAppSelector } from "@/src/store/cart/hooks";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   LayoutAnimation,
@@ -28,9 +32,11 @@ if (
 
 const CouponBox = () => {
   const colors = useThemeColor();
-  const applyPromotion = useCartStore((s) => s.applyPromotion);
-  const removePromotion = useCartStore((s) => s.removePromotion);
-  const appliedPromotion = useCartStore((s) => s.appliedPromotion);
+  const dispatch = useAppDispatch();
+  const applyPromotion = (promotion: any, resolvedBundleItems: any[]) =>
+    dispatch(applyPromotionRequest({ promotion, resolvedBundleItems }));
+  const removePromotion = () => dispatch(removePromotionRequest());
+  const appliedPromotion = useAppSelector((s) => s.cart.appliedPromotion);
 
   const { mutateAsync, isPending } = useValidateCoupon();
   const { mutateAsync: fetchBundleAsync } = useFetchBundle();
@@ -38,6 +44,20 @@ const CouponBox = () => {
   const [couponCode, setCouponCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [previousAppliedId, setPreviousAppliedId] = useState<number | null>(
+    null,
+  );
+
+  // Watch for successful promotion application
+  useEffect(() => {
+    if (appliedPromotion && appliedPromotion.id !== previousAppliedId) {
+      setCouponCode("");
+      setIsExpanded(false);
+      setError(null);
+      setPreviousAppliedId(appliedPromotion.id);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
+  }, [appliedPromotion, previousAppliedId]);
 
   // --- Handlers ---
 
@@ -65,24 +85,14 @@ const CouponBox = () => {
           const bundleItems = await fetchBundleAsync(promo.promotion_bundle_id);
 
           console.log(bundleItems);
-          const applied = await applyPromotion(promo, bundleItems);
-
-          if (applied) {
-            setCouponCode("");
-            setIsExpanded(false);
-          }
+          applyPromotion(promo, bundleItems);
         } catch (e) {
           console.log(e);
           setError("Failed to load bundle items.");
           return;
         }
       } else {
-        const applied = await applyPromotion(promo, []);
-
-        if (applied) {
-          setCouponCode("");
-          setIsExpanded(false);
-        }
+        applyPromotion(promo, []);
       }
 
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);

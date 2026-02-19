@@ -1,12 +1,12 @@
 import { useThemeColor } from "@/src/hooks/useThemeColors";
-import { useCartStore } from "@/src/store/cart.store";
+import { useAppSelector } from "@/src/store/cart/hooks";
 import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 const CartBar = () => {
   const colors = useThemeColor();
-  const totalItems = useCartStore((s) => s.totalItems);
-  const subtotal = useCartStore((s) => s.subtotal);
+  const totalItems = useAppSelector((s) => s.cart.totalItems);
+  const subtotal = useAppSelector((s) => s.cart.subtotal);
   const router = useRouter();
   const goToCart = () => {
     router.navigate("/menu/cart");
