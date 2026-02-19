@@ -77,11 +77,24 @@ const MenuItemCard = ({ item, isWeb = false, cardWidth }: Props) => {
         ) : quantity === 0 ? (
           <TouchableOpacity
             onPress={() => addItem(item)}
-            style={[styles.addBtn, { borderColor: colors.actionPrimary }]}
+            style={[
+              styles.addBtn,
+              {
+                borderColor: isWeb ? "transparent" : colors.actionPrimary,
+                backgroundColor: isWeb
+                  ? colors.backgroundElevated
+                  : "transparent",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isWeb ? 0.08 : 0,
+                shadowRadius: 6,
+                elevation: isWeb ? 3 : 0,
+              },
+            ]}
           >
             <Text
               style={{
-                color: colors.actionPrimary,
+                color: isWeb ? colors.textPrimary : colors.actionPrimary,
                 fontWeight: "700",
               }}
             >
