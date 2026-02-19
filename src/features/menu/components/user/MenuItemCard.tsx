@@ -9,9 +9,11 @@ import QuantityStepper from "./QuantityStepper";
 
 interface Props {
   item: MenuItem;
+  isWeb?: boolean;
+  cardWidth?: number;
 }
 
-const MenuItemCard = ({ item }: Props) => {
+const MenuItemCard = ({ item, isWeb = false, cardWidth }: Props) => {
   const colors = useThemeColor();
   const { data } = useFoodImages(item.name);
   const dispatch = useAppDispatch();
@@ -28,6 +30,7 @@ const MenuItemCard = ({ item }: Props) => {
     <View
       style={[
         styles.card,
+        isWeb && cardWidth ? { width: cardWidth } : null,
         {
           backgroundColor: colors.backgroundElevated,
           borderColor: colors.borderLight,

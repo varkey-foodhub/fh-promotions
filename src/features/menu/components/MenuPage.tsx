@@ -5,9 +5,11 @@ import React from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +21,24 @@ const MenuHomePage = () => {
   const colors = useThemeColor();
   const router = useRouter();
   const { data, isLoading, error } = useMenu();
+  const { width } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
+  const columns = isWeb
+    ? width >= 1400
+      ? 8
+      : width >= 1100
+        ? 6
+        : width >= 800
+          ? 4
+          : 3
+    : 2;
+  const gridGap = 16;
+  const horizontalPadding = 32;
+  const availableWidth = Math.max(
+    0,
+    width - horizontalPadding - gridGap * (columns - 1),
+  );
+  const cardWidth = isWeb ? Math.floor(availableWidth / columns) : undefined;
 
   const handler = {
     navigateToHome: () => {
@@ -65,9 +85,13 @@ const MenuHomePage = () => {
       <FlatList
         data={data}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <MenuItemCard item={item} />}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: "space-between" }}
+        renderItem={({ item }) => (
+          <MenuItemCard item={item} isWeb={isWeb} cardWidth={cardWidth} />
+        )}
+        numColumns={columns}
+        columnWrapperStyle={
+          isWeb ? styles.columnWrapperWeb : styles.columnWrapper
+        }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
@@ -84,6 +108,13 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 140,
+  },
+  columnWrapper: {
+    justifyContent: "space-between",
+  },
+  columnWrapperWeb: {
+    justifyContent: "flex-start",
+    gap: 16,
   },
   header: {
     flexDirection: "row",
