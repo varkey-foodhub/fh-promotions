@@ -5,7 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBundles, useCreatePromotion } from "../promotions.queries";
 import { CreatePromotionPayload, FormValues } from "../promotions.types";
@@ -23,6 +29,8 @@ const CreatePromotionForm = () => {
   const router = useRouter();
   const { data: menuItems } = useMenu();
   const [isMenuSelectorVisible, setIsMenuSelectorVisible] = useState(false);
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 900;
 
   const {
     control,
@@ -171,34 +179,39 @@ const CreatePromotionForm = () => {
           {/* Basic Info Section */}
           <View style={styles.section}>
             <View style={styles.sectionDivider} />
-            <ControlledInput<FormValues>
-              name="name"
-              control={control}
-              label="Promotion Name"
-              required
-              rules={{ required: "Promotion name is required" }}
-              inputProps={{
-                placeholder: "e.g., Summer Sale 2024",
-              }}
-            />
-
-            <ControlledInput<FormValues>
-              name="code"
-              control={control}
-              label="Promotion Code"
-              required
-              rules={{
-                required: "Code is required",
-                pattern: {
-                  value: /^[A-Z0-9]+$/,
-                  message: "Code must be uppercase letters/numbers only",
-                },
-              }}
-              inputProps={{
-                placeholder: "e.g., SUMMER50",
-                autoCapitalize: "characters",
-              }}
-            />
+            <View style={[styles.formRow, isDesktop && styles.formRowDesktop]}>
+              <View style={isDesktop && styles.formColumnDesktop}>
+                <ControlledInput<FormValues>
+                  name="name"
+                  control={control}
+                  label="Promotion Name"
+                  required
+                  rules={{ required: "Promotion name is required" }}
+                  inputProps={{
+                    placeholder: "e.g., Summer Sale 2024",
+                  }}
+                />
+              </View>
+              <View style={isDesktop && styles.formColumnDesktop}>
+                <ControlledInput<FormValues>
+                  name="code"
+                  control={control}
+                  label="Promotion Code"
+                  required
+                  rules={{
+                    required: "Code is required",
+                    pattern: {
+                      value: /^[A-Z0-9]+$/,
+                      message: "Code must be uppercase letters/numbers only",
+                    },
+                  }}
+                  inputProps={{
+                    placeholder: "e.g., SUMMER50",
+                    autoCapitalize: "characters",
+                  }}
+                />
+              </View>
+            </View>
           </View>
 
           {/* Discount Value Section */}
@@ -333,19 +346,25 @@ const CreatePromotionForm = () => {
             <View style={styles.sectionDivider} />
             <CreatePromotionFieldTitle text="Validity Period" />
 
-            <ControlledDatePicker<FormValues>
-              name="valid_from"
-              control={control}
-              label="Start Date"
-              required
-              rules={{ required: "Start date is required" }}
-            />
+            <View style={[styles.formRow, isDesktop && styles.formRowDesktop]}>
+              <View style={isDesktop && styles.formColumnDesktop}>
+                <ControlledDatePicker<FormValues>
+                  name="valid_from"
+                  control={control}
+                  label="Start Date"
+                  required
+                  rules={{ required: "Start date is required" }}
+                />
+              </View>
 
-            <ControlledDatePicker<FormValues>
-              name="valid_to"
-              control={control}
-              label="End Date (Optional)"
-            />
+              <View style={isDesktop && styles.formColumnDesktop}>
+                <ControlledDatePicker<FormValues>
+                  name="valid_to"
+                  control={control}
+                  label="End Date (Optional)"
+                />
+              </View>
+            </View>
 
             <ThemedText style={styles.helperText}>
               Leave end date empty for no expiration
@@ -357,91 +376,99 @@ const CreatePromotionForm = () => {
             <View style={styles.sectionDivider} />
             <CreatePromotionFieldTitle text="Conditions (Optional)" />
 
-            {/* Required Items */}
-            <View>
-              <ThemedText style={styles.label}>Required Items</ThemedText>
-              <TouchableOpacity
-                style={[
-                  styles.selectorButton,
-                  { borderColor: colors.borderLight },
-                ]}
-                onPress={() => setIsMenuSelectorVisible(true)}
-              >
-                <ThemedText
-                  style={[
-                    styles.selectorText,
-                    {
-                      color:
-                        selectedItemIds.length > 0
-                          ? colors.textPrimary
-                          : colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {selectedItemIds.length > 0
-                    ? `${selectedItemIds.length} item${selectedItemIds.length > 1 ? "s" : ""} selected`
-                    : "Select items"}
-                </ThemedText>
-                <Ionicons
-                  name="add-circle-outline"
-                  size={22}
-                  color={colors.textPrimary}
-                />
-              </TouchableOpacity>
-
-              {/* Selected Items List */}
-              {getSelectedItems().length > 0 && (
-                <View style={styles.selectedItemsList}>
-                  {getSelectedItems().map((item) => (
-                    <View
-                      key={item.id}
+            <View style={[styles.formRow, isDesktop && styles.formRowDesktop]}>
+              <View style={isDesktop && styles.formColumnDesktop}>
+                {/* Required Items */}
+                <View>
+                  <ThemedText style={styles.label}>Required Items</ThemedText>
+                  <TouchableOpacity
+                    style={[
+                      styles.selectorButton,
+                      { borderColor: colors.borderLight },
+                    ]}
+                    onPress={() => setIsMenuSelectorVisible(true)}
+                  >
+                    <ThemedText
                       style={[
-                        styles.selectedItemChip,
-                        { backgroundColor: colors.backgroundElevated },
+                        styles.selectorText,
+                        {
+                          color:
+                            selectedItemIds.length > 0
+                              ? colors.textPrimary
+                              : colors.textSecondary,
+                        },
                       ]}
                     >
-                      <View style={styles.selectedItemInfo}>
-                        <ThemedText style={styles.selectedItemName}>
-                          {item.name}
-                        </ThemedText>
-                        <ThemedText style={styles.selectedItemPrice}>
-                          ₹{item.price}
-                        </ThemedText>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => handleRemoveItem(item.id)}
-                        style={styles.removeButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons
-                          name="close-circle"
-                          size={20}
-                          color="#D32F2F"
-                        />
-                      </TouchableOpacity>
+                      {selectedItemIds.length > 0
+                        ? `${selectedItemIds.length} item${selectedItemIds.length > 1 ? "s" : ""} selected`
+                        : "Select items"}
+                    </ThemedText>
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={22}
+                      color={colors.textPrimary}
+                    />
+                  </TouchableOpacity>
+
+                  {/* Selected Items List */}
+                  {getSelectedItems().length > 0 && (
+                    <View style={styles.selectedItemsList}>
+                      {getSelectedItems().map((item) => (
+                        <View
+                          key={item.id}
+                          style={[
+                            styles.selectedItemChip,
+                            { backgroundColor: colors.backgroundElevated },
+                          ]}
+                        >
+                          <View style={styles.selectedItemInfo}>
+                            <ThemedText style={styles.selectedItemName}>
+                              {item.name}
+                            </ThemedText>
+                            <ThemedText style={styles.selectedItemPrice}>
+                              ₹{item.price}
+                            </ThemedText>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => handleRemoveItem(item.id)}
+                            style={styles.removeButton}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color="#D32F2F"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
                     </View>
-                  ))}
+                  )}
+
+                  <ThemedText style={styles.helperText}>
+                    Select items required in cart for promotion to apply
+                  </ThemedText>
                 </View>
-              )}
+              </View>
 
-              <ThemedText style={styles.helperText}>
-                Select items required in cart for promotion to apply
-              </ThemedText>
+              <View style={isDesktop && styles.formColumnDesktop}>
+                {/* Min Order Value */}
+                <View>
+                  <ControlledInput<FormValues>
+                    name="conditions.min_order_value"
+                    control={control}
+                    label="Minimum Order Value (Optional)"
+                    inputProps={{
+                      placeholder: "e.g., 500",
+                      keyboardType: "numeric",
+                    }}
+                  />
+                  <ThemedText style={styles.helperText}>
+                    Minimum cart value required for this promotion
+                  </ThemedText>
+                </View>
+              </View>
             </View>
-
-            {/* Min Order Value */}
-            <ControlledInput<FormValues>
-              name="conditions.min_order_value"
-              control={control}
-              label="Minimum Order Value (Optional)"
-              inputProps={{
-                placeholder: "e.g., 500",
-                keyboardType: "numeric",
-              }}
-            />
-            <ThemedText style={styles.helperText}>
-              Minimum cart value required for this promotion
-            </ThemedText>
           </View>
 
           <View style={{ height: 100 }} />
@@ -516,6 +543,19 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#F0F0F0",
     marginVertical: 8,
+  },
+  formRow: {
+    flexDirection: "column",
+    gap: 16,
+  },
+  formRowDesktop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+  },
+  formColumnDesktop: {
+    flex: 1,
+    minWidth: 0,
   },
   buttonContainer: {
     flexDirection: "row",
